@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Race Car Brake Dynamics & Thermal Lab</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; text-align: center; background: #f8f9fa;}
         h1 { color: #2c3e50; margin-bottom: 5px; }
@@ -36,7 +37,6 @@
         .lab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px; }
         .lab-box { background: #f8f9fa; padding: 12px; border-radius: 5px; font-family: 'Courier New', Courier, monospace; border-left: 4px solid #3498db; font-size: 0.9em; white-space: pre-line; }
 
-        /* Learning Area Styling */
         .learning-section { background: #ffffff; padding: 25px; border-radius: 8px; margin-top: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: left; border-top: 4px solid #2ecc71; }
         .theory-block { background: #f1f2f6; padding: 15px; border-left: 4px solid #2ecc71; margin: 12px 0; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-size: 0.95em; }
         .math-var { color: #e74c3c; font-weight: bold; }
@@ -67,6 +67,7 @@
     
     <div class="btn-group">
         <button onclick="startSimulation()" class="action-btn" style="background: #2ecc71;">Start Engine</button>
+        <button onclick="downloadExcel()" class="action-btn" style="background: #3a6073;">📊 Download Excel Workspace</button>
     </div>
 
     <div class="track">
@@ -144,7 +145,7 @@
         let isBraking = false;
         
         let speed = 0, frontTemp = 25, rearTemp = 25, time = 0, distance = 0, tickCount = 0;
-        const dt = 0.05; // Tight physics calculation tick
+        const dt = 0.05;
 
         const brakeBtn = document.getElementById('brakeBtn');
 
@@ -172,19 +173,17 @@
             let f_bias = (parseFloat(document.getElementById('frontBias').value) || 0) / 100;
             let r_bias = (parseFloat(document.getElementById('rearBias').value) || 0) / 100;
 
-            // Equations from spreadsheet
             let totalEnergy = 0.5 * M * Math.pow(v, 2) * k;
-            let deccel = mu * 9.80665; // Calculate true deceleration rate from friction coefficient
+            let deccel = mu * 9.80665;
             let stoppingTime = deccel > 0 ? (v / deccel) : 0;
 
             document.getElementById('globalThermalSummary').innerText = 
                 `Total Energy Absorbed: ${totalEnergy.toFixed(2)} J | Est. Stopping Time: ${stoppingTime.toFixed(3)} s | Deceleration: ${deccel.toFixed(3)} m/s²`;
 
-            // Front System Processing (2 Front Discs assumed)
             let e_front_total = totalEnergy * f_bias;
             let e_front_disc = e_front_total / 2;
             let p_front_disc = stoppingTime > 0 ? (e_front_disc / stoppingTime) : 0;
-            let flux_front = p_front_disc / (2 * area); // Clamped symmetrically on 2 surfaces
+            let flux_front = p_front_disc / (2 * area);
             let dT_front_avg = e_front_disc / (m_rotor * c);
             let dT_front_max = e_front_disc / (m_action * c);
 
@@ -197,7 +196,6 @@
             fHTML += `• Final Expected Temp (Max): <b>${(t_init + dT_front_max).toFixed(2)}°C</b>`;
             document.getElementById('frontLabOutput').innerHTML = fHTML;
 
-            // Rear System Processing (2 Rear Discs assumed)
             let e_rear_total = totalEnergy * r_bias;
             let e_rear_disc = e_rear_total / 2;
             let p_rear_disc = stoppingTime > 0 ? (e_rear_disc / stoppingTime) : 0;
@@ -257,20 +255,13 @@
                 document.getElementById('statusDisplay').innerText = "BRAKING";
                 document.getElementById('statusDisplay').style.color = "#f1c40f";
 
-                // Map decelerations directly through kinetic limits verified via spreadsheet math
                 let deceleration = mu * 9.80665;
-                
-                // Effective mass accounting for rotational momentum penalty factor
                 let effectiveDecel = deceleration / k;
-                
-                // Calculate dynamic kinetic work converted down into both disc sets per slice
                 let stepKEWork = 0.5 * M * (Math.pow(speed, 2) - Math.pow(Math.max(0, speed - effectiveDecel * dt), 2)) * k;
                 
-                // Energy dissipation applied per wheel rotor surface (2 front discs, 2 rear discs)
                 let heatFrontDisc = (stepKEWork * f_bias) / 2;
                 let heatRearDisc = (stepKEWork * r_bias) / 2;
 
-                // Step temperatures upwards using action mass to simulate true peak contact temps
                 frontTemp += heatFrontDisc / (m_action * c);
                 rearTemp += heatRearDisc / (m_action * c);
 
@@ -279,7 +270,6 @@
                 document.getElementById('statusDisplay').innerText = "Cruising";
                 document.getElementById('statusDisplay').style.color = "#2ecc71";
                 
-                // Minor atmospheric track cooling slice
                 frontTemp -= (frontTemp - 25) * 0.01 * dt;
                 rearTemp -= (rearTemp - 25) * 0.01 * dt;
             }
@@ -332,9 +322,61 @@
                     }
                 }
             });
-            <a href="FSAE_Brake_Thermal_Calculations.xlsx" download class="action-btn" style="background: #3a6073; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
-    📊 Download Excel Workspace
-</a>
+        }
+
+        // LIVE EXCEL COMPILER FUNCTION
+        function downloadExcel() {
+            let M = parseFloat(document.getElementById('vehicleMass').value) || 0;
+            let v = parseFloat(document.getElementById('initSpeed').value) || 0;
+            let k = parseFloat(document.getElementById('rotFactor').value) || 1;
+            let m_rotor = parseFloat(document.getElementById('rotorMass').value) || 1;
+            let m_action = parseFloat(document.getElementById('actionMass').value) || 1;
+            let c = parseFloat(document.getElementById('specHeat').value) || 1;
+            let area = parseFloat(document.getElementById('padArea').value) || 1;
+            let t_init = parseFloat(document.getElementById('initTemp').value) || 0;
+            let mu = parseFloat(document.getElementById('roadFriction').value) || 0;
+            let f_bias = (parseFloat(document.getElementById('frontBias').value) || 0) / 100;
+            let r_bias = (parseFloat(document.getElementById('rearBias').value) || 0) / 100;
+
+            // Compute values matching validation formulas
+            let totalEnergy = 0.5 * M * Math.pow(v, 2) * k;
+            let deccel = mu * 9.80665;
+            let stoppingTime = deccel > 0 ? (v / deccel) : 0;
+
+            let dataMatrix = [
+                ["FSAE Brake Dynamics & Thermal Verification Sheet"],
+                [],
+                ["Input Operational Parameter", "Value", "Unit"],
+                ["Vehicle Mass (M)", M, "kg"],
+                ["Initial Speed (v)", v, "m/s"],
+                ["Rotational Correction Factor (k)", k, "-"],
+                ["Rotor Component Full Mass", m_rotor, "kg"],
+                ["Action Rubbing Surface Mass", m_action, "kg"],
+                ["Pad Surface Contact Area (1-side)", area, "m²"],
+                ["Specific Heat Capacity (c)", c, "J/kg·K"],
+                ["Ambient Baseline Temp (T_init)", t_init, "°C"],
+                ["Tire Friction Adhesion Limit (μ)", mu, "-"],
+                ["Front Distribution Bias Share", f_bias, "%"],
+                ["Rear Distribution Bias Share", r_bias, "%"],
+                [],
+                ["System Performance Summary Metrics", "Calculated Output Value", "Unit"],
+                ["Total Dissipated Kinetic Work (Q)", totalEnergy, "Joules"],
+                ["True Deceleration Profile (a)", deccel, "m/s²"],
+                ["Estimated Full Stop Window", stoppingTime, "seconds"],
+                [],
+                ["Thermal Balance Distribution Models", "Front Axle Unit (Per Disc)", "Rear Axle Unit (Per Disc)"],
+                ["Axle Energy Group Allocation", totalEnergy * f_bias, totalEnergy * r_bias],
+                ["Single Disk Workload Share", (totalEnergy * f_bias) / 2, (totalEnergy * r_bias) / 2],
+                ["Power Load Concentration", stoppingTime > 0 ? ((totalEnergy * f_bias) / 2) / stoppingTime : 0, stoppingTime > 0 ? ((totalEnergy * r_bias) / 2) / stoppingTime : 0],
+                ["Bulk Core Temperature Shift (Soak ΔT)", ((totalEnergy * f_bias) / 2) / (m_rotor * c), ((totalEnergy * r_bias) / 2) / (m_rotor * c)],
+                ["Track Boundary Surface Shift (Peak ΔT)", ((totalEnergy * f_bias) / 2) / (m_action * c), ((totalEnergy * r_bias) / 2) / (m_action * c)],
+                ["Absolute Expected Peak Surface Heat", t_init + (((totalEnergy * f_bias) / 2) / (m_action * c)), t_init + (((totalEnergy * r_bias) / 2) / (m_action * c))]
+            ];
+
+            let wb = XLSX.utils.book_new();
+            let ws = XLSX.utils.aoa_to_sheet(dataMatrix);
+            XLSX.utils.book_append_sheet(wb, ws, "Thermal Dynamics Verification");
+            XLSX.writeFile(wb, "FSAE_Brake_Thermal_Lab_Report.xlsx");
         }
     </script>
 </body>
