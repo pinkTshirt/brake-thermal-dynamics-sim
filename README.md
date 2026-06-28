@@ -42,4 +42,3 @@ Right below the simulation track, a built-in lab workspace calculates your exact
 3. Choose your branch (`main` or `master`), select the root folder (`/`), and click **Save**.
 4. Open your live link, hit **Start Engine**, and hold down the pedal!
 
-*Tip: If the website doesn't refresh right away after saving your changes, just add `?v=4` to the end of your website link (like `...github.io/hydraulic-brakes-sim/?v=4`) to force your browser to load the brand new version.*
