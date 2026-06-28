@@ -1,52 +1,45 @@
-# 🏎️ Advanced Hydraulic Brakes & Physics Lab
+# 🏎️ Race Car Brake Dynamics & Thermal Lab
 
-Welcome to the **Advanced Hydraulic Brakes & Physics Lab**! This project is a live, interactive web application designed to simulate the mechanical engineering, fluid dynamics, and thermodynamics of a real-world automotive braking system. 
+Welcome to the **Race Car Brake Dynamics & Thermal Lab**! This is an interactive web app designed to simulate the physics and temperatures of a race car's braking system (built with Formula Student / FSAE metrics in mind).
 
-It transforms abstract physics concepts—like kinetic energy transformation and fluid power multiplication—into a visual, real-time playground.
+It helps you visualize how kinetic energy turns into heat across both front and rear brakes in real time.
 
 ---
 
-## 🚀 Core Features
+## ✨ Core Features
 
-### 1. Live Interactive Controls
-* **"Hold to Brake" Pedal:** Uses advanced event listeners to capture exact user interactions. The simulation cruises constantly until you physically click/touch and hold the red brake button, giving a tactile feel to the stopping process.
-* **Real-Time Configuration Grid:** Allows users to adjust mechanical inputs on the fly before firing up the engine:
-  * **Starting Speed (m/s):** Set how fast the vehicle is traveling initially.
-  * **Pedal Force (N):** Adjust the physical force your foot exerts on the master cylinder.
-  * **Road Friction ($\mu$):** Simulate different environments, ranging from dry asphalt ($0.9$) to slick ice ($0.1$).
-  * **Cooling Rate:** Customize the rate of thermal dissipation into the surrounding air.
+### 1. Real Race Car Settings
+Preloaded with real engineering data from high-performance vehicle setups:
+* **Vehicle Weight:** Set to a lightweight $245\text{ kg}$ race car.
+* **Rotational Factor ($k = 1.15$):** Accounts for the extra energy needed to stop spinning parts like wheels and rotors.
+* **Brake Bias Setup:** Simulates a realistic $75\%$ front and $25\%$ rear brake balance.
+* **Dual Mass Tracking:** Separates the full rotor mass from the actual "rubbing surface" to show both average cooling temps and instant surface hot-spots.
 
-### 2. Dual Visualizations
-* **Dynamic Test Track:** A responsive, visual track featuring an animated car element whose lateral movement speed is directly and procedurally bound to the physics engine loops.
-* **Live Analytics Charting:** Powered by **Chart.js**, this dual-axis graph draws data point-by-point every half-second without layout shifting. It cleanly cross-references **Speed (m/s)** on the left axis and **Rotor Temperature (°C)** on the right axis across time.
+### 2. Live Telemetry Chart
+* Powered by **Chart.js**, the graph updates live every 50 milliseconds.
+* It simultaneously tracks your **Speed**, **Front Rotor Temperature**, and **Rear Rotor Temperature** without slowing down your browser.
 
-### 3. Advanced Physics Engine Dynamics
-* **Pascal's Law Integration:** Simulates real hydraulic force multiplication, scaling your input pedal force across a master-to-slave cylinder ratio.
-* **Dynamic Brake Fade:** Models material limitations. If your rotor temperature surpasses **250°C**, the brake pads realistically begin to vaporize, dropping the friction coefficient and causing stopping distances to spike.
-* **Tire Grip & Locked-Wheel Skidding:** Incorporates tire adhesion limits ($F = m \cdot g \cdot \mu$). Slamming the brakes too hard on low-friction surfaces causes the wheels to lock up, dropping stopping efficiency and changing the vehicle status to `SKIDDING! ⚠️`.
-* **Toggleable Anti-lock Braking System (ABS):** Switch ABS on to see how an onboard computer automatically modules system pressure right at the absolute limit of tire adhesion (`ABS ENGAGED ✨`), saving the car from an uncontrolled slide.
-
-### 4. Integrated Physics Lab Overlay
-* Includes a built-in, overlay panel that pauses the active simulation loop to break down the exact mathematics governing the system under the hood. It teaches:
-  * **Fluid Dynamics** (Hydraulic pressure multiplication).
-  * **Thermodynamics** (Converting kinetic energy into thermal energy).
-  * **Materials Science** (Thermal degradation and brake fade thresholds).
-  * **Tire Dynamics** (Static vs. kinetic road friction friction limits).
+### 3. Integrated Thermal Lab Sheet
+Right below the simulation track, a built-in lab workspace calculates your exact spreadsheet formulas instantly:
+* **Total Energy ($J$):** Total kinetic energy converted during braking.
+* **Power ($W$) & Heat Flux ($\text{W/m}^2$):** Shows exactly how hard the brakes are working and how concentrated the heat is on the rotor surface.
+* **Temperature Spikes ($\Delta T$):** Predicts the exact degree jump your rotors will experience from a full stop.
 
 ---
 
 ## 🛠️ Technology Stack
 
-* **Frontend Architecture:** Clean, semantic **HTML5** structure.
-* **Styling & Layout:** **CSS3** utilizing a modern Grid/Flexbox layout, procedural transitions, and custom active state button shadows to mimic a physical pedal depression.
-* **Logic Engine:** Native **JavaScript (ES6+)** running an asynchronous loop configuration via `setInterval` to handle clock cycles securely without floating-point drift.
-* **Data Visualization:** **Chart.js** via an optimized Content Delivery Network (CDN) link.
+* **HTML5 & CSS3:** Clean layout built with a responsive grid and flexbox.
+* **JavaScript (ES6+):** Pure, native code running a fast physics loop without lag or rounding bugs.
+* **Chart.js:** Included via a lightweight CDN to handle smooth graphing.
 
 ---
 
-## 📦 How to Run the Project
+## 📦 How to Deploy on GitHub Pages
 
-1. Copy the code from `index.html`.
-2. Paste it into your local repository or text editor.
-3. Commit and push the changes to your **GitHub Pages** repository.
-4. Open your GitHub Pages URL, hit **Start Engine**, and hold down the pedal!
+1. Copy the code from `index.html` and paste it into your GitHub repository file.
+2. Go to your repository **Settings ➔ Pages**.
+3. Choose your branch (`main` or `master`), select the root folder (`/`), and click **Save**.
+4. Open your live link, hit **Start Engine**, and hold down the pedal!
+
+*Tip: If the website doesn't refresh right away after saving your changes, just add `?v=4` to the end of your website link (like `...github.io/hydraulic-brakes-sim/?v=4`) to force your browser to load the brand new version.*
