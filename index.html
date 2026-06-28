@@ -3,48 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Brake Simulation</title>
+    <title>Advanced Live Brake Simulation</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; text-align: center;}
-        .dashboard { display: flex; justify-content: space-around; background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .stat-box { font-size: 1.2em; }
-        .stat-value { font-size: 2em; font-weight: bold; color: #3498db; }
-        .controls { margin-bottom: 20px; }
+        .dashboard { display: flex; justify-content: space-around; background: #2c3e50; color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .stat-box { font-size: 1.1em; }
+        .stat-value { font-size: 1.8em; font-weight: bold; color: #3498db; display: block; margin-top: 5px; }
         
-        /* The Brake Pedal Button */
+        .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; text-align: right; background: #f4f4f9; padding: 15px; border-radius: 8px;}
+        .controls-grid label { display: flex; justify-content: space-between; align-items: center; font-weight: bold;}
+        .controls-grid input { padding: 5px; width: 80px; text-align: center;}
+        
+        /* The Track and Car */
+        .track { width: 100%; height: 60px; background: #34495e; position: relative; overflow: hidden; border-radius: 8px; margin-bottom: 20px; border-bottom: 4px dashed #bdc3c7;}
+        .car { font-size: 40px; position: absolute; left: 0%; top: 5px; user-select: none;}
+
         #brakeBtn { 
-            padding: 20px 50px; font-size: 1.5em; font-weight: bold; 
+            padding: 15px 40px; font-size: 1.5em; font-weight: bold; 
             background: #e74c3c; color: white; border: none; border-radius: 10px; 
-            cursor: pointer; box-shadow: 0 5px #c0392b; user-select: none;
+            cursor: pointer; box-shadow: 0 5px #c0392b; user-select: none; margin-bottom: 10px;
         }
         #brakeBtn:active { background: #c0392b; box-shadow: 0 2px #962d22; transform: translateY(3px); }
         #brakeBtn:disabled { background: #7f8c8d; box-shadow: 0 5px #7f8c8d; cursor: not-allowed; transform: none; }
-        
-        canvas { margin-top: 20px; }
     </style>
 </head>
 <body>
 
-    <h1>Live Hydraulic Brake Simulation 🏎️</h1>
+    <h1>Advanced Hydraulic Brakes 🏎️</h1>
     
-    <div class="controls">
-        <label>Starting Speed (m/s): <input type="number" id="initSpeed" value="45"></label>
-        <label>Pedal Force (N): <input type="number" id="pedalForce" value="300"></label>
-        <button onclick="startSimulation()" style="padding:5px 10px; margin-left:10px;">Start Engine</button>
+    <div class="controls-grid">
+        <label>Start Speed (m/s): <input type="number" id="initSpeed" value="45"></label>
+        <label>Pedal Force (N): <input type="number" id="pedalForce" value="400"></label>
+        <label>Road Friction (μ): <input type="number" id="roadFriction" value="0.9" step="0.1"></label>
+        <label>Cooling Rate: <input type="number" id="coolingRate" value="0.05" step="0.01"></label>
+    </div>
+    
+    <button onclick="startSimulation()" style="padding:10px 20px; font-size: 1.2em; background: #2ecc71; color: white; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 20px;">Start Engine</button>
+
+    <div class="track">
+        <div id="car" class="car">🏎️</div>
     </div>
 
     <div class="dashboard">
-        <div class="stat-box">Speed<br><span id="speedDisplay" class="stat-value">0.0</span> m/s</div>
-        <div class="stat-box">Temp<br><span id="tempDisplay" class="stat-value" style="color:#e74c3c;">20</span> °C</div>
-        <div class="stat-box">Status<br><span id="statusDisplay" class="stat-value" style="color:#2ecc71;">Stopped</span></div>
+        <div class="stat-box">Speed<span id="speedDisplay" class="stat-value">0.0</span></div>
+        <div class="stat-box">Temp (°C)<span id="tempDisplay" class="stat-value" style="color:#e74c3c;">20</span></div>
+        <div class="stat-box">Distance (m)<span id="distDisplay" class="stat-value" style="color:#f1c40f;">0</span></div>
+        <div class="stat-box">Status<span id="statusDisplay" class="stat-value" style="color:#2ecc71;">Stopped</span></div>
     </div>
 
-    <div>
-        <button id="brakeBtn" disabled>HOLD TO BRAKE</button>
-    </div>
+    <button id="brakeBtn" disabled>HOLD TO BRAKE</button>
 
-    <canvas id="brakeChart" width="800" height="400"></canvas>
+    <canvas id="brakeChart" width="800" height="350"></canvas>
 
     <script>
         let myChart = null;
@@ -52,28 +62,25 @@
         let isBraking = false;
         
         // Physics variables
-        let speed = 0, temp = 20.0, time = 0;
-        const masterArea = 5.0, slaveArea = 20.0, mass = 1500, baseFriction = 0.8;
-        const dt = 0.1; // Run physics 10 times a second
-
-        // Setup Event Listeners for the Brake Button
-        const brakeBtn = document.getElementById('brakeBtn');
+        let speed = 0, temp = 20.0, time = 0, distance = 0;
+        let totalDistance = 0; // For the stat board
+        let tickCount = 0;     // To fix the graph bug!
         
-        // Mouse controls
+        const masterArea = 5.0, slaveArea = 20.0, mass = 1500, baseBrakeFriction = 0.8, g = 9.81;
+        const dt = 0.1;
+
+        // Button Event Listeners
+        const brakeBtn = document.getElementById('brakeBtn');
         brakeBtn.addEventListener('mousedown', () => isBraking = true);
         brakeBtn.addEventListener('mouseup', () => isBraking = false);
         brakeBtn.addEventListener('mouseleave', () => isBraking = false);
-        
-        // Touch controls for mobile
         brakeBtn.addEventListener('touchstart', (e) => { e.preventDefault(); isBraking = true; });
         brakeBtn.addEventListener('touchend', (e) => { e.preventDefault(); isBraking = false; });
 
         function startSimulation() {
-            // Reset everything
             clearInterval(simInterval);
             speed = parseFloat(document.getElementById('initSpeed').value);
-            temp = 20.0;
-            time = 0;
+            temp = 20.0; time = 0; distance = 0; totalDistance = 0; tickCount = 0;
             isBraking = false;
             
             document.getElementById('statusDisplay').innerText = "Cruising";
@@ -81,12 +88,16 @@
             brakeBtn.disabled = false;
 
             initChart();
-
-            // Start the live loop (runs every 100 milliseconds)
-            simInterval = setInterval(physicsLoop, 100);
+            simInterval = setInterval(physicsLoop, 50); // Run every 50ms for smoother animation
         }
 
         function physicsLoop() {
+            tickCount++; // Increment integer tick
+            
+            // Fetch live variables
+            let roadFriction = parseFloat(document.getElementById('roadFriction').value);
+            let coolingRate = parseFloat(document.getElementById('coolingRate').value);
+
             if (speed <= 0) {
                 speed = 0;
                 clearInterval(simInterval);
@@ -97,44 +108,78 @@
                 return;
             }
 
-            let currentFriction = baseFriction;
-            let appliedForce = isBraking ? parseFloat(document.getElementById('pedalForce').value) : 0;
-
+            let currentBrakeFriction = baseBrakeFriction;
+            
             if (isBraking) {
-                document.getElementById('statusDisplay').innerText = "BRAKING!";
-                document.getElementById('statusDisplay').style.color = "#f1c40f";
-                
+                let appliedForce = parseFloat(document.getElementById('pedalForce').value);
                 let pressure = appliedForce / masterArea;
                 let slaveForce = pressure * slaveArea;
-                let frictionForce = slaveForce * currentFriction;
-
-                // Heat logic
-                let heatGenerated = frictionForce * speed * 0.001 * dt;
-                temp += heatGenerated;
-
-                if (temp > 250) {
-                    let fadeFactor = Math.max(0.15, 1.0 - (temp - 250) * 0.005);
-                    currentFriction = baseFriction * fadeFactor;
+                
+                // Intended brake force
+                let intendedFrictionForce = slaveForce * currentBrakeFriction;
+                
+                // Max grip the tires have on the road (mass * gravity * road_friction)
+                let maxGripForce = mass * g * roadFriction;
+                
+                let actualFrictionForce = intendedFrictionForce;
+                
+                if (intendedFrictionForce > maxGripForce) {
+                    // Skidding! Brakes locked up. We can only decelerate as much as the tires allow.
+                    actualFrictionForce = maxGripForce;
+                    document.getElementById('statusDisplay').innerText = "SKIDDING!";
+                    document.getElementById('statusDisplay').style.color = "#9b59b6";
+                } else {
+                    document.getElementById('statusDisplay').innerText = "BRAKING";
+                    document.getElementById('statusDisplay').style.color = "#f1c40f";
                 }
 
-                let deceleration = frictionForce / mass;
+                // Heat logic (Brakes fade at 250°C)
+                let heatGenerated = actualFrictionForce * speed * 0.001 * dt;
+                temp += heatGenerated;
+                if (temp > 250) {
+                    let fadeFactor = Math.max(0.15, 1.0 - (temp - 250) * 0.005);
+                    currentBrakeFriction = baseBrakeFriction * fadeFactor;
+                }
+
+                let deceleration = actualFrictionForce / mass;
                 speed -= deceleration * dt;
+                
             } else {
                 document.getElementById('statusDisplay').innerText = "Cruising";
                 document.getElementById('statusDisplay').style.color = "#2ecc71";
             }
 
-            // Always apply a little cooling
-            temp -= (temp - 20.0) * 0.05 * dt; 
+            // Apply customizable thermal dissipation (Cooling)
+            temp -= (temp - 20.0) * coolingRate * dt; 
+            
+            // Movement logic
+            speed = Math.max(0, speed);
+            let distCovered = speed * dt;
+            totalDistance += distCovered;
+            distance += distCovered; 
+            
             time += dt;
 
-            updateDashboard();
-            updateChart();
+            updateVisuals();
         }
 
-        function updateDashboard() {
+        function updateVisuals() {
+            // Update Text Dashboard
             document.getElementById('speedDisplay').innerText = speed.toFixed(1);
             document.getElementById('tempDisplay').innerText = temp.toFixed(0);
+            document.getElementById('distDisplay').innerText = totalDistance.toFixed(0);
+            
+            // Move the car (loops every 100 meters)
+            let visualPercentage = (distance % 100); 
+            document.getElementById('car').style.left = visualPercentage + '%';
+
+            // Only update the graph every 5 ticks (0.5 seconds of simulation time)
+            if (tickCount % 5 === 0) { 
+                myChart.data.labels.push(time.toFixed(1));
+                myChart.data.datasets[0].data.push(speed);
+                myChart.data.datasets[1].data.push(temp);
+                myChart.update();
+            }
         }
 
         function initChart() {
@@ -146,12 +191,12 @@
                 data: {
                     labels: [0],
                     datasets: [
-                        { label: 'Speed (m/s)', data: [speed], borderColor: '#3498db', yAxisID: 'y' },
-                        { label: 'Rotor Temp (°C)', data: [temp], borderColor: '#e74c3c', yAxisID: 'y1' }
+                        { label: 'Speed (m/s)', data: [speed], borderColor: '#3498db', yAxisID: 'y', pointRadius: 0 },
+                        { label: 'Rotor Temp (°C)', data: [temp], borderColor: '#e74c3c', yAxisID: 'y1', pointRadius: 0 }
                     ]
                 },
                 options: {
-                    animation: false, // Turn off animation for live updating
+                    animation: false, 
                     responsive: true,
                     scales: {
                         x: { title: { display: true, text: 'Time (s)' } },
@@ -160,16 +205,6 @@
                     }
                 }
             });
-        }
-
-        function updateChart() {
-            // Only update the chart every 0.5 seconds to keep it looking clean
-            if (Math.abs((time % 0.5)) < 0.05) { 
-                myChart.data.labels.push(time.toFixed(1));
-                myChart.data.datasets[0].data.push(speed);
-                myChart.data.datasets[1].data.push(temp);
-                myChart.update();
-            }
         }
     </script>
 </body>
