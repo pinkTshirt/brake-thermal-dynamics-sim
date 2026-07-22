@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tandem Hydraulic Brake Circuit Simulator</title>
+  <title>Direct Hydraulic Brake Circuit Simulator</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
@@ -150,7 +150,6 @@
       font-weight: 600;
       display: none;
     }
-    .banner-warning { background: rgba(245, 158, 11, 0.2); border: 1px solid var(--warning); color: #fcd34d; }
     .banner-danger { background: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); color: #fca5a5; }
 
     .charts-container {
@@ -187,8 +186,8 @@
       <div class="param-section" style="border-top: none; padding-top: 0;">
         <h4>Applied Input</h4>
         <div class="control-group">
-          <label for="pedalForce"><span>Pedal Force</span> <span id="pedalVal">300 N</span></label>
-          <input type="range" id="pedalForce" min="0" max="600" step="10" value="300">
+          <label for="inputForce"><span>Applied Effort</span> <span id="inputVal">300 N</span></label>
+          <input type="range" id="inputForce" min="0" max="600" step="10" value="300">
         </div>
       </div>
 
@@ -246,18 +245,10 @@
       </div>
 
       <div class="param-section">
-        <h4>Proportioning & Friction Defaults</h4>
+        <h4>Leverage & Friction Defaults</h4>
         <div class="control-group">
-          <label for="p_pedal_ratio">Pedal Lever Ratio</label>
-          <input type="number" id="p_pedal_ratio" value="4.5" step="0.1">
-        </div>
-        <div class="control-group">
-          <label for="p_mc_bore">Master Cylinder Bore (mm)</label>
-          <input type="number" id="p_mc_bore" value="22.2" step="0.5">
-        </div>
-        <div class="control-group">
-          <label for="p_knee_bar">Valve Knee Pressure (bar)</label>
-          <input type="number" id="p_knee_bar" value="25.0" step="1">
+          <label for="p_lever_ratio">Leverage Ratio</label>
+          <input type="number" id="p_lever_ratio" value="4.5" step="0.1">
         </div>
         <div class="control-group">
           <label for="p_base_pad_mu">Base Pad Friction (&mu;)</label>
@@ -288,9 +279,6 @@
       </div>
 
       <div class="status-banners">
-        <div id="valveBanner" class="banner banner-warning">
-          ℹ️ Proportioning valve active (limiting rear line pressure gain)
-        </div>
         <div id="lockupBanner" class="banner banner-danger">
           ⚠️ WHEEL LOCKUP RISK — Demand exceeds tire grip limit
         </div>
@@ -318,8 +306,7 @@
         this.wheel_radius_m = 0.28;
         this.tire_mu = 0.8987;
 
-        this.pedal_ratio = parseFloat(document.getElementById('p_pedal_ratio').value);
-        this.mc_bore_mm = parseFloat(document.getElementById('p_mc_bore').value);
+        this.lever_ratio = parseFloat(document.getElementById('p_lever_ratio').value);
 
         this.front_piston_dia_mm = parseFloat(document.getElementById('p_front_piston_dia').value);
         this.front_piston_count = 2;
@@ -332,13 +319,10 @@
         this.front_pad_area_cm2 = parseFloat(document.getElementById('p_front_pad_area').value);
         this.rear_pad_area_cm2 = parseFloat(document.getElementById('p_rear_pad_area').value);
 
-        this.knee_bar = parseFloat(document.getElementById('p_knee_bar').value);
-        this.valve_slope = 0.35;
         this.base_pad_mu = parseFloat(document.getElementById('p_base_pad_mu').value);
 
-        // Calculate specific thermal mass based on disc material (J/kg°C) * estimated rotor mass
         const specHeat = parseFloat(document.getElementById('p_disc_material').value);
-        this.front_thermal_capacity = (specHeat * 0.263); // ~0.263kg effective rotor track mass
+        this.front_thermal_capacity = (specHeat * 0.263);
         this.rear_thermal_capacity = (specHeat * 0.263);
         this.ambient_temp_c = 20.0;
       }
@@ -352,38 +336,35 @@
         this.vehicle_speed = parseFloat(document.getElementById('p_initial_speed').value);
       }
 
-      _bore_area_m2(dia_mm) {
+      _piston_area_m2(dia_mm) {
         const radius_m = dia_mm / 2000.0;
         return Math.PI * Math.pow(radius_m, 2);
       }
 
-      mc_area_m2() { return this._bore_area_m2(this.mc_bore_mm); }
-      front_piston_area_m2() { return this._bore_area_m2(this.front_piston_dia_mm) * this.front_piston_count; }
-      rear_piston_area_m2() { return this._bore_area_m2(this.rear_piston_dia_mm) * this.rear_piston_count; }
+      front_piston_area_m2() { return this._piston_area_m2(this.front_piston_dia_mm) * this.front_piston_count; }
+      rear_piston_area_m2() { return this._piston_area_m2(this.rear_piston_dia_mm) * this.rear_piston_count; }
 
       _fade_factor(temp_c, fade_start_c = 250.0, fade_rate = 0.005, floor = 0.15) {
         if (temp_c <= fade_start_c) return 1.0;
         return Math.max(floor, 1.0 - (temp_c - fade_start_c) * fade_rate);
       }
 
-      apply_brakes(pedal_force_n, dt) {
+      apply_brakes(input_force_n, dt) {
         this.readInputs();
 
-        const pushrod_force_n = pedal_force_n * this.pedal_ratio;
-        const mc_pressure_pa = pushrod_force_n / this.mc_area_m2();
-        const mc_pressure_bar = mc_pressure_pa / 1e5;
+        // Direct mechanical force transfer into hydraulic line pressure
+        const effective_force_n = input_force_n * this.lever_ratio;
+        // Equivalent system reference area based on caliper displacement sizing
+        const ref_area_m2 = (this.front_piston_area_m2() + this.rear_piston_area_m2()) / 2.0;
+        const line_pressure_pa = effective_force_n / ref_area_m2;
+        const line_pressure_bar = line_pressure_pa / 1e5;
 
-        const front_bar = mc_pressure_bar;
-        let rear_bar = mc_pressure_bar;
-        if (mc_pressure_bar > this.knee_bar) {
-          rear_bar = this.knee_bar + (mc_pressure_bar - this.knee_bar) * this.valve_slope;
-        }
-        const valve_limiting = mc_pressure_bar > this.knee_bar;
+        const front_bar = line_pressure_bar;
+        const rear_bar = line_pressure_bar;
 
         const front_clamp_n = front_bar * 1e5 * this.front_piston_area_m2();
         const rear_clamp_n = rear_bar * 1e5 * this.rear_piston_area_m2();
 
-        // Include pad pressure distribution effect using pad surface area
         const front_torque_per_wheel_nm = 2 * this.current_front_mu * front_clamp_n * this.front_rotor_radius_m;
         const rear_torque_per_wheel_nm = 2 * this.current_rear_mu * rear_clamp_n * this.rear_rotor_radius_m;
         const total_torque_nm = 2 * front_torque_per_wheel_nm + 2 * rear_torque_per_wheel_nm;
@@ -408,11 +389,9 @@
         this.current_rear_mu = this.base_pad_mu * this._fade_factor(this.rear_temp);
 
         return {
-          pushrod_force_n,
-          mc_pressure_bar,
+          effective_force_n,
           front_line_bar: front_bar,
           rear_line_bar: rear_bar,
-          valve_limiting,
           deceleration,
           wheel_locking,
           front_temp_c: this.front_temp,
@@ -428,9 +407,9 @@
 
     let history = { time: [0], speed: [11.11], force: [0], front_bar: [0], rear_bar: [0], front_temp: [20], rear_temp: [20] };
 
-    const pedalSlider = document.getElementById('pedalForce');
-    const pedalVal = document.getElementById('pedalVal');
-    pedalSlider.oninput = () => pedalVal.innerText = `${pedalSlider.value} N`;
+    const inputSlider = document.getElementById('inputForce');
+    const inputVal = document.getElementById('inputVal');
+    inputSlider.oninput = () => inputVal.innerText = `${inputSlider.value} N`;
 
     function updateMaterial() {
       sim.readInputs();
@@ -462,7 +441,7 @@
     }
 
     const cSpeed = createChart('chartSpeed', 'Speed (m/s)', '#38bdf8');
-    const cForce = createChart('chartForce', 'Pedal Force (N)', '#22c55e');
+    const cForce = createChart('chartForce', 'Applied Effort (N)', '#22c55e');
     const cPress = createChart('chartPressure', ['Front Line (bar)', 'Rear Line (bar)'], ['#ef4444', '#f97316']);
     const cTemp = createChart('chartTemp', ['Front Temp (°C)', 'Rear Temp (°C)'], ['#ef4444', '#f97316']);
 
@@ -489,11 +468,11 @@
     // --- Real-time Loop Driven by Hold Interaction ---
     function simLoop(timestamp) {
       if (!lastAnimTime) lastAnimTime = timestamp;
-      const frameDt = Math.min((timestamp - lastAnimTime) / 1000, 0.1); // Clamp delta time
+      const frameDt = Math.min((timestamp - lastAnimTime) / 1000, 0.1);
       lastAnimTime = timestamp;
 
       if (sim.vehicle_speed > 0) {
-        const force = isBraking ? parseFloat(pedalSlider.value) : 0;
+        const force = isBraking ? parseFloat(inputSlider.value) : 0;
         const res = sim.apply_brakes(force, frameDt);
 
         sim.vehicle_speed = Math.max(0.0, sim.vehicle_speed - res.deceleration * frameDt);
@@ -507,7 +486,6 @@
         history.front_temp.push(res.front_temp_c.toFixed(0));
         history.rear_temp.push(res.rear_temp_c.toFixed(0));
 
-        // Limit maximum graph memory points for performance
         if (history.time.length > 500) {
           for (let key in history) history[key].shift();
         }
@@ -517,7 +495,6 @@
         document.getElementById('dispFront').innerText = `${res.front_line_bar.toFixed(1)} bar / ${res.front_temp_c.toFixed(0)}°C`;
         document.getElementById('dispRear').innerText = `${res.rear_line_bar.toFixed(1)} bar / ${res.rear_temp_c.toFixed(0)}°C`;
 
-        document.getElementById('valveBanner').style.display = res.valve_limiting ? 'block' : 'none';
         document.getElementById('lockupBanner').style.display = res.wheel_locking ? 'block' : 'none';
 
         updateCharts();
@@ -536,7 +513,6 @@
       document.getElementById('dispDecel').innerText = `0.00 m/s²`;
       document.getElementById('dispFront').innerText = `0 bar / 20°C`;
       document.getElementById('dispRear').innerText = `0 bar / 20°C`;
-      document.getElementById('valveBanner').style.display = 'none';
       document.getElementById('lockupBanner').style.display = 'none';
 
       updateCharts();
