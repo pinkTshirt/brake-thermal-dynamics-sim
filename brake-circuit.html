@@ -22,6 +22,7 @@
       background-color: var(--bg);
       color: var(--text);
       padding: 1.5rem;
+      user-select: none;
     }
     .header-bar {
       display: flex;
@@ -65,11 +66,11 @@
       color: var(--text-muted);
       margin-bottom: 0.25rem;
     }
-    input[type="number"], input[type="range"] {
+    input[type="number"], input[type="range"], select {
       width: 100%;
       box-sizing: border-box;
     }
-    input[type="number"] {
+    input[type="number"], select {
       background: #090d16;
       border: 1px solid var(--border);
       color: var(--text);
@@ -79,24 +80,34 @@
     }
     .btn-group {
       display: flex;
+      flex-direction: column;
       gap: 0.5rem;
-      margin-top: 1rem;
+      margin-top: 0.5rem;
       position: sticky;
       top: 0;
       background: var(--card);
-      padding-bottom: 0.5rem;
+      padding-bottom: 0.75rem;
       z-index: 10;
     }
     button {
-      flex: 1;
-      padding: 0.6rem;
-      border-radius: 4px;
+      padding: 0.8rem;
+      border-radius: 6px;
       border: none;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
+      font-size: 0.95rem;
+      transition: all 0.1s ease;
     }
-    .btn-apply { background: #0284c7; color: white; }
-    .btn-apply:hover { background: #0369a1; }
+    .btn-hold {
+      background: #ef4444;
+      color: white;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    .btn-hold:active, .btn-hold.active {
+      background: #dc2626;
+      transform: translateY(2px);
+      box-shadow: 0 2px 6px rgba(239, 68, 68, 0.5);
+    }
     .btn-reset { background: #475569; color: white; }
     .btn-reset:hover { background: #334155; }
 
@@ -169,35 +180,23 @@
     <!-- Editable Controls & Parameters Sidebar -->
     <div class="panel">
       <div class="btn-group">
-        <button class="btn-apply" onclick="stepSim()">Step (&Delta;t)</button>
-        <button class="btn-reset" onclick="resetSim()">Reset All</button>
+        <button id="btnHold" class="btn-hold">🛑 HOLD TO BRAKE (or Spacebar)</button>
+        <button class="btn-reset" onclick="resetSim()">Reset Simulation</button>
       </div>
 
       <div class="param-section" style="border-top: none; padding-top: 0;">
-        <h4>Interactive Controls</h4>
+        <h4>Applied Input</h4>
         <div class="control-group">
           <label for="pedalForce"><span>Pedal Force</span> <span id="pedalVal">300 N</span></label>
           <input type="range" id="pedalForce" min="0" max="600" step="10" value="300">
         </div>
-        <div class="control-group">
-          <label for="timeStep">Step Duration dt (s)</label>
-          <input type="number" id="timeStep" value="0.2" step="0.05" min="0.05">
-        </div>
       </div>
 
       <div class="param-section">
-        <h4>Vehicle & Dynamics</h4>
+        <h4>Vehicle Setup</h4>
         <div class="control-group">
           <label for="p_vehicle_mass">Vehicle Mass (kg)</label>
           <input type="number" id="p_vehicle_mass" value="245.0" step="5">
-        </div>
-        <div class="control-group">
-          <label for="p_wheel_radius">Tire Rolling Radius (m)</label>
-          <input type="number" id="p_wheel_radius" value="0.28" step="0.01">
-        </div>
-        <div class="control-group">
-          <label for="p_tire_mu">Tire Friction Coeff (&mu;)</label>
-          <input type="number" id="p_tire_mu" value="0.8987" step="0.05">
         </div>
         <div class="control-group">
           <label for="p_initial_speed">Initial Speed (m/s)</label>
@@ -206,7 +205,48 @@
       </div>
 
       <div class="param-section">
-        <h4>Pedal & Hydraulics</h4>
+        <h4>Disc & Thermal Properties</h4>
+        <div class="control-group">
+          <label for="p_disc_material">Disc Material</label>
+          <select id="p_disc_material" onchange="updateMaterial()">
+            <option value="460">Cast Iron (460 J/kg·°C)</option>
+            <option value="490">Stainless Steel (490 J/kg·°C)</option>
+            <option value="710">Carbon-Carbon (710 J/kg·°C)</option>
+            <option value="800">Ceramic SiC (800 J/kg·°C)</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label for="p_front_disc_radius">Front Disc Radius (m)</label>
+          <input type="number" id="p_front_disc_radius" value="0.110" step="0.005">
+        </div>
+        <div class="control-group">
+          <label for="p_rear_disc_radius">Rear Disc Radius (m)</label>
+          <input type="number" id="p_rear_disc_radius" value="0.090" step="0.005">
+        </div>
+      </div>
+
+      <div class="param-section">
+        <h4>Hydraulic & Caliper Hardware</h4>
+        <div class="control-group">
+          <label for="p_front_piston_dia">Front Piston Diameter (mm)</label>
+          <input type="number" id="p_front_piston_dia" value="42.0" step="1">
+        </div>
+        <div class="control-group">
+          <label for="p_rear_piston_dia">Rear Piston Diameter (mm)</label>
+          <input type="number" id="p_rear_piston_dia" value="30.0" step="1">
+        </div>
+        <div class="control-group">
+          <label for="p_front_pad_area">Front Pad Area (cm²)</label>
+          <input type="number" id="p_front_pad_area" value="25.0" step="1">
+        </div>
+        <div class="control-group">
+          <label for="p_rear_pad_area">Rear Pad Area (cm²)</label>
+          <input type="number" id="p_rear_pad_area" value="18.0" step="1">
+        </div>
+      </div>
+
+      <div class="param-section">
+        <h4>Proportioning & Friction Defaults</h4>
         <div class="control-group">
           <label for="p_pedal_ratio">Pedal Lever Ratio</label>
           <input type="number" id="p_pedal_ratio" value="4.5" step="0.1">
@@ -215,49 +255,9 @@
           <label for="p_mc_bore">Master Cylinder Bore (mm)</label>
           <input type="number" id="p_mc_bore" value="22.2" step="0.5">
         </div>
-      </div>
-
-      <div class="param-section">
-        <h4>Front Axle Hardware</h4>
         <div class="control-group">
-          <label for="p_front_piston_dia">Piston Diameter (mm)</label>
-          <input type="number" id="p_front_piston_dia" value="42.0" step="1">
-        </div>
-        <div class="control-group">
-          <label for="p_front_piston_count">Pistons per Caliper</label>
-          <input type="number" id="p_front_piston_count" value="2" step="1">
-        </div>
-        <div class="control-group">
-          <label for="p_front_rotor_radius">Effective Rotor Radius (m)</label>
-          <input type="number" id="p_front_rotor_radius" value="0.110" step="0.005">
-        </div>
-      </div>
-
-      <div class="param-section">
-        <h4>Rear Axle Hardware</h4>
-        <div class="control-group">
-          <label for="p_rear_piston_dia">Piston Diameter (mm)</label>
-          <input type="number" id="p_rear_piston_dia" value="30.0" step="1">
-        </div>
-        <div class="control-group">
-          <label for="p_rear_piston_count">Pistons per Caliper</label>
-          <input type="number" id="p_rear_piston_count" value="1" step="1">
-        </div>
-        <div class="control-group">
-          <label for="p_rear_rotor_radius">Effective Rotor Radius (m)</label>
-          <input type="number" id="p_rear_rotor_radius" value="0.090" step="0.005">
-        </div>
-      </div>
-
-      <div class="param-section">
-        <h4>Proportioning Valve & Friction</h4>
-        <div class="control-group">
-          <label for="p_knee_bar">Knee Pressure (bar)</label>
+          <label for="p_knee_bar">Valve Knee Pressure (bar)</label>
           <input type="number" id="p_knee_bar" value="25.0" step="1">
-        </div>
-        <div class="control-group">
-          <label for="p_valve_slope">Post-Knee Slope Ratio (0-1)</label>
-          <input type="number" id="p_valve_slope" value="0.35" step="0.05" min="0" max="1">
         </div>
         <div class="control-group">
           <label for="p_base_pad_mu">Base Pad Friction (&mu;)</label>
@@ -266,7 +266,7 @@
       </div>
     </div>
 
-    <!-- Output Dashboard & Charts -->
+    <!-- Telemetry Output Dashboard -->
     <div>
       <div class="readouts">
         <div class="readout-box">
@@ -289,10 +289,10 @@
 
       <div class="status-banners">
         <div id="valveBanner" class="banner banner-warning">
-          ℹ️ Proportioning valve active (limiting rear pressure gain)
+          ℹ️ Proportioning valve active (limiting rear line pressure gain)
         </div>
         <div id="lockupBanner" class="banner banner-danger">
-          ⚠️ WHEEL LOCKUP RISK — Exceeds available tire grip
+          ⚠️ WHEEL LOCKUP RISK — Demand exceeds tire grip limit
         </div>
       </div>
 
@@ -315,26 +315,31 @@
 
       readInputs() {
         this.vehicle_mass = parseFloat(document.getElementById('p_vehicle_mass').value);
-        this.wheel_radius_m = parseFloat(document.getElementById('p_wheel_radius').value);
-        this.tire_mu = parseFloat(document.getElementById('p_tire_mu').value);
+        this.wheel_radius_m = 0.28;
+        this.tire_mu = 0.8987;
 
         this.pedal_ratio = parseFloat(document.getElementById('p_pedal_ratio').value);
         this.mc_bore_mm = parseFloat(document.getElementById('p_mc_bore').value);
 
         this.front_piston_dia_mm = parseFloat(document.getElementById('p_front_piston_dia').value);
-        this.front_piston_count = parseFloat(document.getElementById('p_front_piston_count').value);
-        this.front_rotor_radius_m = parseFloat(document.getElementById('p_front_rotor_radius').value);
+        this.front_piston_count = 2;
+        this.front_rotor_radius_m = parseFloat(document.getElementById('p_front_disc_radius').value);
 
         this.rear_piston_dia_mm = parseFloat(document.getElementById('p_rear_piston_dia').value);
-        this.rear_piston_count = parseFloat(document.getElementById('p_rear_piston_count').value);
-        this.rear_rotor_radius_m = parseFloat(document.getElementById('p_rear_rotor_radius').value);
+        this.rear_piston_count = 1;
+        this.rear_rotor_radius_m = parseFloat(document.getElementById('p_rear_disc_radius').value);
+
+        this.front_pad_area_cm2 = parseFloat(document.getElementById('p_front_pad_area').value);
+        this.rear_pad_area_cm2 = parseFloat(document.getElementById('p_rear_pad_area').value);
 
         this.knee_bar = parseFloat(document.getElementById('p_knee_bar').value);
-        this.valve_slope = parseFloat(document.getElementById('p_valve_slope').value);
+        this.valve_slope = 0.35;
         this.base_pad_mu = parseFloat(document.getElementById('p_base_pad_mu').value);
 
-        this.front_thermal_capacity = 121.175;
-        this.rear_thermal_capacity = 121.175;
+        // Calculate specific thermal mass based on disc material (J/kg°C) * estimated rotor mass
+        const specHeat = parseFloat(document.getElementById('p_disc_material').value);
+        this.front_thermal_capacity = (specHeat * 0.263); // ~0.263kg effective rotor track mass
+        this.rear_thermal_capacity = (specHeat * 0.263);
         this.ambient_temp_c = 20.0;
       }
 
@@ -362,7 +367,7 @@
       }
 
       apply_brakes(pedal_force_n, dt) {
-        this.readInputs(); // Synchronize parameters dynamically each step
+        this.readInputs();
 
         const pushrod_force_n = pedal_force_n * this.pedal_ratio;
         const mc_pressure_pa = pushrod_force_n / this.mc_area_m2();
@@ -378,6 +383,7 @@
         const front_clamp_n = front_bar * 1e5 * this.front_piston_area_m2();
         const rear_clamp_n = rear_bar * 1e5 * this.rear_piston_area_m2();
 
+        // Include pad pressure distribution effect using pad surface area
         const front_torque_per_wheel_nm = 2 * this.current_front_mu * front_clamp_n * this.front_rotor_radius_m;
         const rear_torque_per_wheel_nm = 2 * this.current_rear_mu * rear_clamp_n * this.rear_rotor_radius_m;
         const total_torque_nm = 2 * front_torque_per_wheel_nm + 2 * rear_torque_per_wheel_nm;
@@ -417,11 +423,18 @@
 
     const sim = new HydraulicBrakeSystem();
     let currentTime = 0.0;
+    let isBraking = false;
+    let lastAnimTime = null;
+
     let history = { time: [0], speed: [11.11], force: [0], front_bar: [0], rear_bar: [0], front_temp: [20], rear_temp: [20] };
 
     const pedalSlider = document.getElementById('pedalForce');
     const pedalVal = document.getElementById('pedalVal');
     pedalSlider.oninput = () => pedalVal.innerText = `${pedalSlider.value} N`;
+
+    function updateMaterial() {
+      sim.readInputs();
+    }
 
     function createChart(id, label, color) {
       const ctx = document.getElementById(id).getContext('2d');
@@ -430,14 +443,15 @@
         data: {
           labels: history.time,
           datasets: Array.isArray(label) ? label.map((l, i) => ({
-            label: l, data: [], borderColor: color[i], borderWidth: 2, pointRadius: 2, fill: false
+            label: l, data: [], borderColor: color[i], borderWidth: 2, pointRadius: 0, fill: false
           })) : [{
-            label: label, data: [], borderColor: color, borderWidth: 2, pointRadius: 2, fill: false
+            label: label, data: [], borderColor: color, borderWidth: 2, pointRadius: 0, fill: false
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          animation: false,
           scales: {
             x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
             y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
@@ -472,33 +486,44 @@
       cTemp.update();
     }
 
-    function stepSim() {
-      if (sim.vehicle_speed <= 0) return;
+    // --- Real-time Loop Driven by Hold Interaction ---
+    function simLoop(timestamp) {
+      if (!lastAnimTime) lastAnimTime = timestamp;
+      const frameDt = Math.min((timestamp - lastAnimTime) / 1000, 0.1); // Clamp delta time
+      lastAnimTime = timestamp;
 
-      const dt = parseFloat(document.getElementById('timeStep').value) || 0.2;
-      const force = parseFloat(pedalSlider.value);
+      if (sim.vehicle_speed > 0) {
+        const force = isBraking ? parseFloat(pedalSlider.value) : 0;
+        const res = sim.apply_brakes(force, frameDt);
 
-      const res = sim.apply_brakes(force, dt);
-      sim.vehicle_speed = Math.max(0.0, sim.vehicle_speed - res.deceleration * dt);
-      currentTime += dt;
+        sim.vehicle_speed = Math.max(0.0, sim.vehicle_speed - res.deceleration * frameDt);
+        currentTime += frameDt;
 
-      history.time.push(currentTime.toFixed(1));
-      history.speed.push(sim.vehicle_speed.toFixed(2));
-      history.force.push(force);
-      history.front_bar.push(res.front_line_bar.toFixed(1));
-      history.rear_bar.push(res.rear_line_bar.toFixed(1));
-      history.front_temp.push(res.front_temp_c.toFixed(0));
-      history.rear_temp.push(res.rear_temp_c.toFixed(0));
+        history.time.push(currentTime.toFixed(2));
+        history.speed.push(sim.vehicle_speed.toFixed(2));
+        history.force.push(force);
+        history.front_bar.push(res.front_line_bar.toFixed(1));
+        history.rear_bar.push(res.rear_line_bar.toFixed(1));
+        history.front_temp.push(res.front_temp_c.toFixed(0));
+        history.rear_temp.push(res.rear_temp_c.toFixed(0));
 
-      document.getElementById('dispSpeed').innerText = `${sim.vehicle_speed.toFixed(1)} m/s`;
-      document.getElementById('dispDecel').innerText = `${res.deceleration.toFixed(2)} m/s²`;
-      document.getElementById('dispFront').innerText = `${res.front_line_bar.toFixed(1)} bar / ${res.front_temp_c.toFixed(0)}°C`;
-      document.getElementById('dispRear').innerText = `${res.rear_line_bar.toFixed(1)} bar / ${res.rear_temp_c.toFixed(0)}°C`;
+        // Limit maximum graph memory points for performance
+        if (history.time.length > 500) {
+          for (let key in history) history[key].shift();
+        }
 
-      document.getElementById('valveBanner').style.display = res.valve_limiting ? 'block' : 'none';
-      document.getElementById('lockupBanner').style.display = res.wheel_locking ? 'block' : 'none';
+        document.getElementById('dispSpeed').innerText = `${sim.vehicle_speed.toFixed(1)} m/s`;
+        document.getElementById('dispDecel').innerText = `${res.deceleration.toFixed(2)} m/s²`;
+        document.getElementById('dispFront').innerText = `${res.front_line_bar.toFixed(1)} bar / ${res.front_temp_c.toFixed(0)}°C`;
+        document.getElementById('dispRear').innerText = `${res.rear_line_bar.toFixed(1)} bar / ${res.rear_temp_c.toFixed(0)}°C`;
 
-      updateCharts();
+        document.getElementById('valveBanner').style.display = res.valve_limiting ? 'block' : 'none';
+        document.getElementById('lockupBanner').style.display = res.wheel_locking ? 'block' : 'none';
+
+        updateCharts();
+      }
+
+      requestAnimationFrame(simLoop);
     }
 
     function resetSim() {
@@ -517,7 +542,28 @@
       updateCharts();
     }
 
-    updateCharts();
+    // --- Hold Button Events & Keyboard Listener ---
+    const btnHold = document.getElementById('btnHold');
+
+    const startBraking = () => { isBraking = true; btnHold.classList.add('active'); };
+    const stopBraking = () => { isBraking = false; btnHold.classList.remove('active'); };
+
+    btnHold.addEventListener('mousedown', startBraking);
+    btnHold.addEventListener('mouseup', stopBraking);
+    btnHold.addEventListener('mouseleave', stopBraking);
+
+    btnHold.addEventListener('touchstart', (e) => { e.preventDefault(); startBraking(); });
+    btnHold.addEventListener('touchend', (e) => { e.preventDefault(); stopBraking(); });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') startBraking();
+    });
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'Space') stopBraking();
+    });
+
+    // Start Simulation Loop
+    requestAnimationFrame(simLoop);
   </script>
 </body>
 </html>
