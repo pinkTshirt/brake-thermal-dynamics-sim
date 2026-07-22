@@ -3,118 +3,313 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tandem Hydraulic Brake System — Reference Model</title>
+  <title>Baja SAE Hydraulic Braking System Overview</title>
   <style>
     :root {
       --bg: #0f172a;
       --card: #1e293b;
+      --card-hover: #334155;
       --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.2);
+      --danger: #ef4444;
+      --warning: #f59e0b;
       --text: #f8fafc;
       --text-muted: #94a3b8;
       --border: #334155;
+      --code-bg: #090d16;
     }
+
     body {
       margin: 0;
       font-family: system-ui, -apple-system, sans-serif;
       background-color: var(--bg);
       color: var(--text);
       line-height: 1.6;
-      padding: 2rem;
+      padding: 2rem 1.5rem;
     }
+
     .container {
-      max-width: 900px;
+      max-width: 1200px;
       margin: 0 auto;
     }
+
     header {
+      text-align: center;
+      margin-bottom: 3rem;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 1.5rem;
-      margin-bottom: 2rem;
+      padding-bottom: 2rem;
     }
-    h1 {
+
+    .badge {
+      display: inline-block;
+      background: rgba(56, 189, 248, 0.1);
       color: var(--accent);
-      margin: 0 0 0.5rem 0;
+      border: 1px solid var(--accent);
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
     }
-    p { margin-top: 0; }
-    .card-grid {
+
+    h1 {
+      font-size: 2.5rem;
+      margin: 0 0 0.75rem 0;
+      color: var(--text);
+      letter-spacing: -0.025em;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 1.15rem;
+      max-width: 750px;
+      margin: 0 auto 1.5rem auto;
+    }
+
+    .cta-container {
+      margin-top: 1.5rem;
+    }
+
+    .btn-primary {
+      display: inline-block;
+      background: var(--accent);
+      color: #0f172a;
+      font-weight: 700;
+      padding: 0.85rem 1.75rem;
+      border-radius: 8px;
+      text-decoration: none;
+      box-shadow: 0 4px 14px var(--accent-glow);
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .grid-3 {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1.5rem;
       margin-bottom: 2.5rem;
     }
+
     .card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 10px;
       padding: 1.5rem;
+      transition: border-color 0.2s ease;
     }
+
+    .card:hover {
+      border-color: var(--accent);
+    }
+
     .card h3 {
       margin-top: 0;
       color: var(--accent);
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
-    .btn {
-      display: inline-block;
-      background: #0284c7;
-      color: #ffffff;
-      text-decoration: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 6px;
-      font-weight: 600;
-      transition: background 0.2s ease;
+
+    .card ul {
+      padding-left: 1.25rem;
+      margin: 0;
+      color: var(--text-muted);
     }
-    .btn:hover {
-      background: #0369a1;
+
+    .card li {
+      margin-bottom: 0.5rem;
     }
-    code {
-      background: #090d16;
-      padding: 0.2rem 0.4rem;
-      border-radius: 4px;
+
+    .card li strong {
+      color: var(--text);
+    }
+
+    /* Hydraulic Diagram Visual Box */
+    .diagram-container {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
       font-family: monospace;
-      color: var(--accent);
+      color: var(--text-muted);
+      overflow-x: auto;
+      white-space: pre;
+      line-height: 1.4;
+      margin-bottom: 2.5rem;
+    }
+
+    .formula-box {
+      background: var(--code-bg);
+      border-left: 4px solid var(--accent);
+      padding: 1rem;
+      border-radius: 0 6px 6px 0;
+      font-family: monospace;
+      font-size: 0.95rem;
+      color: var(--text);
+      margin: 0.75rem 0;
+    }
+
+    .rules-banner {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid var(--warning);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .rules-banner h4 {
+      margin: 0 0 0.5rem 0;
+      color: var(--warning);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+      margin-top: 3rem;
     }
   </style>
 </head>
 <body>
+
   <div class="container">
     <header>
-      <h1>Tandem Hydraulic Brake Circuit</h1>
-      <p style="color: var(--text-muted);">BAJA SAE Physics Reference Model &amp; Interactive Simulator</p>
+      <span class="badge">SAE India / International Standards</span>
+      <h1>Baja ATV Hydraulic Braking Architecture</h1>
+      <p class="subtitle">
+        An engineering overview of tandem master cylinders, proportioning valve dynamics, thermal dissipation, and split circuit safety requirements for all-terrain racing vehicles.
+      </p>
+      <div class="cta-container">
+        <a href="brake-circuit.html" class="btn-primary">⚡ Launch Interactive Hardware Simulator</a>
+      </div>
     </header>
 
-    <main>
-      <section style="margin-bottom: 2rem;">
-        <h2>System Architecture</h2>
-        <p>
-          This reference implementation models a dual-circuit (tandem) hydraulic braking system designed for light off-road vehicles (BAJA SAE). The system splits pressure from a single foot pedal into two isolated fluid circuits to maintain vehicle control under varying friction and weight transfer conditions.
+    <!-- SAE Regulations Banner -->
+    <div class="rules-banner">
+      <h4>⚠️ Key Baja SAE Technical Regulations (Brake Check Mandate)</h4>
+      <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">
+        Per SAE Rules, the vehicle must be equipped with <strong>at least two independent hydraulic braking circuits</strong> operated by a single foot pedal. Under dynamic test conditions, the braking system must generate sufficient force to <strong>lock all four wheels simultaneously</strong> on loose dirt and asphalt surfaces.
+      </p>
+    </div>
+
+    <!-- Architecture Visual Diagram -->
+    <h2>Hydraulic Circuit Schematic</h2>
+    <div class="diagram-container">
+[Foot Pedal] (Ratio ~ 4.5:1 to 5.0:1)
+     │
+     ▼
+[Tandem Master Cylinder / Dual Pushrod]
+     ├─── (Front Circuit) ──────────────────────────► [Front Calipers] (Floating/Fixed 2-Piston)
+     │                                                     │
+     └─── (Rear Circuit) ──► [Proportioning Valve] ───────► [Rear Caliper] (Inboard Rotor/Axle)
+                                    │
+                                    └─► Knee Pressure Cutoff (Limits Rear Bias to Prevent Spin-Out)
+    </div>
+
+    <!-- 3 Column Breakdown of System Components -->
+    <h2>Core Hardware Components</h2>
+    <div class="grid-3">
+      <div class="card">
+        <h3>1. Pedal Assembly & Lever</h3>
+        <ul>
+          <li><strong>Lever Ratio:</strong> Typically between <code>4.0:1</code> and <code>5.5:1</code> to multiply driver foot input force without excessive pedal travel.</li>
+          <li><strong>Bias Bar:</strong> Connects pedal force to dual master cylinder pushrods, allowing mechanical front/rear force distribution adjustment.</li>
+          <li><strong>Ergonomics:</strong> Designed for high fatigue resistance under maximum emergency panic stops (~500 N force).</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>2. Tandem Master Cylinder</h3>
+        <ul>
+          <li><strong>Split-Circuit Protection:</strong> Contains primary and secondary pistons in a single bore. If one circuit leaks, the other maintains stopping power.</li>
+          <li><strong>Bore Diameter:</strong> Typically <code>16 mm</code> to <code>22.2 mm</code>. Smaller bores increase hydraulic line pressure for a given pedal force.</li>
+          <li><strong>Fluid Reservoirs:</strong> Isolated reservoirs preventing complete fluid depletion in failure events.</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>3. Proportioning Valve & Calipers</h3>
+        <ul>
+          <li><strong>Knee Point Pressure:</strong> Regulates pressure to rear brakes once threshold (e.g., 25 bar) is exceeded to prevent dynamic rear-wheel lockup.</li>
+          <li><strong>Calipers:</strong> Dual-piston front calipers vs. single/dual rear calipers matching dynamic load transfer (~70% Front / 30% Rear).</li>
+          <li><strong>Rotor Materials:</strong> Cast Iron, Stainless Steel (SS420), Carbon-Carbon, or Ceramic SiC discs engineered for thermal mass and weight reduction.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Engineering Mathematics & Dynamics -->
+    <h2>Governing Hydraulic & Thermal Physics</h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Hydraulic Line Pressure</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+          Calculates hydraulic pressure generated by driver foot effort $F_{\text{pedal}}$ through pedal ratio $R_{\text{pedal}}$ and master cylinder bore area $A_{\text{mc}}$:
         </p>
-      </section>
-
-      <div class="card-grid">
-        <div class="card">
-          <h3>Front Circuit (Direct)</h3>
-          <p>
-            Connected directly to the secondary master cylinder piston. Feeds two twin-piston calipers at full system pressure for maximum stopping power as weight shifts forward under deceleration.
-          </p>
-        </div>
-
-        <div class="card">
-          <h3>Rear Circuit (Proportioned)</h3>
-          <p>
-            Feeds single-piston rear calipers through a proportioning valve. Above a critical knee pressure (<code>25 bar</code>), rear line pressure gain is capped to prevent premature rear-wheel lockup.
-          </p>
-        </div>
-
-        <div class="card">
-          <h3>Thermal &amp; Friction Dynamics</h3>
-          <p>
-            Calculates kinetic power dissipation across both axles. Rotor temperatures accumulate heat and cool toward ambient air, dynamically reducing pad friction coefficient (&mu;) when temperatures exceed <code>250°C</code>.
-          </p>
+        <div class="formula-box">
+          P_mc = (F_pedal * R_pedal) / A_mc
         </div>
       </div>
 
-      <div style="text-align: center; margin-top: 3rem;">
-        <a href="brake-circuit.html" class="btn">Launch Brake Simulator &rarr;</a>
+      <div class="card">
+        <h3>Caliper Clamp & Brake Torque</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+          Converts line pressure $P_{\text{line}}$ into mechanical clamping force and total torque using pad friction $\mu$ and disc effective radius $r_{\text{disc}}$:
+        </p>
+        <div class="formula-box">
+          Torque = 2 * μ * (P_line * A_piston) * r_disc
+        </div>
       </div>
-    </main>
+
+      <div class="card">
+        <h3>Dynamic Weight Transfer</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+          Under deceleration $a$, vehicle weight shifts forward onto the front axle, necessitating higher front braking bias:
+        </p>
+        <div class="formula-box">
+          ΔW = (m * a * h_cg) / L_wheelbase
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Rotor Thermal Energy Gain</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">
+          Kinetic energy transformed into heat energy stored in rotor mass $m_{\text{disc}}$ with specific heat capacity $c_p$:
+        </p>
+        <div class="formula-box">
+          ΔT = (Kinetic Energy Absorbed) / (m_disc * c_p)
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 2rem;">
+      <a href="brake-circuit.html" class="btn-primary" style="font-size: 1.1rem; padding: 1rem 2.25rem;">
+        🚀 Open Interactive Telemetry Simulator
+      </a>
+    </div>
+
+    <footer>
+      <p>Baja SAE Hydraulic Circuit Technical Documentation & Simulator | Built for Automotive Engineering Analysis</p>
+    </footer>
   </div>
+
 </body>
 </html>
