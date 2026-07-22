@@ -2,14 +2,12 @@
 
 This is an interactive web app designed to simulate the physics and temperatures of a baja vehicles's braking system 
 
-It helps you visualize how kinetic energy turns into heat across both front and rear brakes in real time.
-Also has an added simulation of the brakes circuit
 ---
 
 ## Core Features
 
 ### 1. Settings
-Preloaded with real engineering data:
+Pre-set values of previous year data
 * **Vehicle Weight:** Set to a lightweight $245\text{ kg}$ buggy.
 * **Rotational Factor ($k = 1.15$):** Accounts for the extra energy needed to stop spinning parts like wheels and rotors.
 * **Brake Bias Setup:** Simulates a realistic $75\%$ front and $25\%$ rear brake balance.
@@ -28,19 +26,4 @@ Right below the simulation track, a built-in lab workspace calculates your exact
 ### 4. Simulation
 * Circuit simulation of a hydraulic brakes system
 ---
-
-## 🛠️ Technology Stack
-
-* **HTML5 & CSS3:** Clean layout built with a responsive grid and flexbox.
-* **JavaScript (ES6+):** Pure, native code running a fast physics loop without lag or rounding bugs.
-* **Chart.js:** Included via a lightweight CDN to handle smooth graphing.
-
----
-
-## 📦 How to Deploy on GitHub Pages
-
-1. Copy the code from `index.html` and paste it into your GitHub repository file.
-2. Go to your repository **Settings ➔ Pages**.
-3. Choose your branch (`main` or `master`), select the root folder (`/`), and click **Save**.
-4. Open your live link, hit **Start Engine**, and hold down the pedal!
 
