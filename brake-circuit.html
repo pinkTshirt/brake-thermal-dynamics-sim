@@ -1,908 +1,439 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hydraulic Brake Circuit Simulator | Race Car Brake Dynamics Lab</title>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --bg:          #06090f;
-            --surface:     #0d1525;
-            --surface2:    #111d33;
-            --border:      rgba(52,152,219,0.18);
-            --border-hi:   rgba(52,152,219,0.55);
-            --text:        #c8d6ef;
-            --dim:         #4a6480;
-            --red:         #ff3333;
-            --orange:      #ff8c00;
-            --blue:        #3ba7ff;
-            --green:       #00e676;
-            --glow-red:    rgba(255,51,51,0.75);
-            --glow-orange: rgba(255,140,0,0.75);
-            --glow-blue:   rgba(59,167,255,0.65);
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tandem Hydraulic Brake Circuit Simulator</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #38bdf8;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 1.5rem;
+    }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto 1.5rem auto;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1rem;
+    }
+    .header-bar h1 { margin: 0; font-size: 1.5rem; color: var(--accent); }
+    .back-link { color: var(--text-muted); text-decoration: none; }
+    .back-link:hover { color: var(--text); }
+    
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 1.5rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    @media (max-width: 900px) {
+      .layout-grid { grid-template-columns: 1fr; }
+    }
 
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+    }
+    .control-group {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+    input[type="number"], input[type="range"] {
+      width: 100%;
+      box-sizing: border-box;
+    }
+    input[type="number"] {
+      background: #090d16;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.5rem;
+      border-radius: 4px;
+    }
+    .btn-group {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    button {
+      flex: 1;
+      padding: 0.6rem;
+      border-radius: 4px;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-apply { background: #0284c7; color: white; }
+    .btn-apply:hover { background: #0369a1; }
+    .btn-reset { background: #475569; color: white; }
+    .btn-reset:hover { background: #334155; }
 
-        body {
-            font-family: 'Barlow Condensed', Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 24px 20px;
-            text-align: center;
-            min-height: 100vh;
-        }
+    .readouts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .readout-box {
+      background: #090d16;
+      border: 1px solid var(--border);
+      padding: 0.75rem;
+      border-radius: 6px;
+    }
+    .readout-box .title { font-size: 0.75rem; color: var(--text-muted); }
+    .readout-box .value { font-size: 1.1rem; font-weight: bold; margin-top: 0.2rem; }
 
-        /* Blueprint grid backdrop */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(52,152,219,0.055) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(52,152,219,0.055) 1px, transparent 1px);
-            background-size: 46px 46px;
-            pointer-events: none;
-            z-index: 0;
-        }
-        body > * { position: relative; z-index: 1; }
+    .status-banners {
+      margin-bottom: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .banner {
+      padding: 0.6rem 1rem;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      display: none;
+    }
+    .banner-warning { background: rgba(245, 158, 11, 0.2); border: 1px solid var(--warning); color: #fcd34d; }
+    .banner-danger { background: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); color: #fca5a5; }
 
-        /* ---- Header ---- */
-        h1 {
-            font-size: 2.2em;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            color: #fff;
-            margin-bottom: 6px;
-            text-shadow: 0 0 28px var(--glow-red), 0 0 60px rgba(255,51,51,0.2);
-        }
-        .subtitle {
-            color: var(--dim);
-            font-size: 0.92em;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            margin-bottom: 22px;
-        }
-
-        /* ---- Nav ---- */
-        .nav-row { margin-bottom: 24px; }
-        .nav-link {
-            display: inline-block;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 0.82em;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: var(--blue);
-            padding: 9px 22px;
-            border-radius: 5px;
-            border: 1px solid var(--border-hi);
-            background: rgba(59,167,255,0.06);
-            box-shadow: 0 0 14px rgba(59,167,255,0.15);
-            transition: all 0.18s;
-        }
-        .nav-link:hover {
-            background: rgba(59,167,255,0.14);
-            box-shadow: 0 0 22px rgba(59,167,255,0.35);
-            color: #fff;
-        }
-
-        /* ---- Controls ---- */
-        .controls-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-bottom: 22px;
-            text-align: left;
-            background: var(--surface);
-            padding: 18px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 28px rgba(0,0,0,0.5);
-        }
-        .controls-grid label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 600;
-            font-size: 0.83em;
-            letter-spacing: 0.04em;
-            color: var(--text);
-        }
-        .controls-grid input {
-            width: 84px;
-            padding: 5px 8px;
-            text-align: right;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            background: var(--bg);
-            color: var(--blue);
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 0.93em;
-            transition: border-color 0.18s, box-shadow 0.18s;
-        }
-        .controls-grid input:focus {
-            outline: none;
-            border-color: var(--blue);
-            box-shadow: 0 0 10px rgba(59,167,255,0.25);
-        }
-        .section-tag {
-            grid-column: 1 / -1;
-            font-size: 0.72em;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: var(--blue);
-            opacity: 0.7;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 4px;
-            margin: 6px 0 0;
-        }
-
-        /* ---- Brake button ---- */
-        .btn-wrap {
-            position: relative;
-            display: inline-block;
-            margin-bottom: 22px;
-        }
-        #brakeBtn {
-            position: relative;
-            padding: 16px 60px;
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 1.55em;
-            font-weight: 700;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: #fff;
-            background: linear-gradient(145deg, #c0392b 0%, #e74c3c 60%, #ff5547 100%);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 5px 0 #7b1c14, 0 0 28px rgba(255,51,51,0.35);
-            user-select: none;
-            transition: box-shadow 0.08s, transform 0.08s;
-            z-index: 1;
-        }
-        .braking #brakeBtn {
-            box-shadow: 0 2px 0 #7b1c14, 0 0 50px rgba(255,51,51,0.9), 0 0 100px rgba(255,51,51,0.25);
-            transform: translateY(3px);
-            background: linear-gradient(145deg, #e74c3c, #ff5547);
-        }
-        .pulse-ring {
-            position: absolute;
-            inset: -10px;
-            border: 2px solid rgba(255,51,51,0.5);
-            border-radius: 14px;
-            opacity: 0;
-            pointer-events: none;
-        }
-        .braking .pulse-ring:nth-child(1) { animation: ring 1s ease-out 0.00s infinite; }
-        .braking .pulse-ring:nth-child(2) { animation: ring 1s ease-out 0.33s infinite; }
-        .braking .pulse-ring:nth-child(3) { animation: ring 1s ease-out 0.66s infinite; }
-        @keyframes ring {
-            0%   { transform: scale(1.00); opacity: 0.8; }
-            100% { transform: scale(1.70); opacity: 0.0; }
-        }
-
-        /* ---- Dashboard (arc gauges) ---- */
-        .dashboard {
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            gap: 6px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 14px 10px 10px;
-            margin-bottom: 22px;
-            box-shadow: 0 4px 28px rgba(0,0,0,0.5);
-        }
-        .gauge-wrap { text-align: center; min-width: 96px; }
-        .gauge-svg  { width: 96px; display: block; margin: 0 auto; overflow: visible; }
-        .g-track    { fill: none; stroke: #192438; stroke-width: 7; stroke-linecap: round; }
-        .g-arc      { fill: none; stroke-width: 7; stroke-linecap: round; stroke-dasharray: 0 1000; }
-        .g-blue   { stroke: var(--blue);   filter: drop-shadow(0 0 5px var(--glow-blue)); }
-        .g-red    { stroke: var(--red);    filter: drop-shadow(0 0 5px var(--glow-red)); }
-        .g-orange { stroke: var(--orange); filter: drop-shadow(0 0 5px var(--glow-orange)); }
-        .g-green  { stroke: var(--green);  filter: drop-shadow(0 0 5px rgba(0,230,118,0.75)); }
-        .g-val    { font-family: 'Share Tech Mono', monospace; font-size: 13px; font-weight: bold; fill: #fff; text-anchor: middle; }
-        .g-unit   { font-size: 8.5px; fill: var(--dim); text-anchor: middle; letter-spacing: 1px; text-transform: uppercase; }
-        .g-label  { font-size: 0.72em; color: var(--dim); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin-top: 3px; }
-
-        .valve-box  { min-width: 96px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .valve-led  { width: 22px; height: 22px; border-radius: 50%; margin: 18px auto 8px; transition: all 0.25s; }
-        .valve-led.open     { background: var(--green); box-shadow: 0 0 10px rgba(0,230,118,0.9), 0 0 22px rgba(0,230,118,0.4); }
-        .valve-led.limiting { background: var(--orange); box-shadow: 0 0 10px var(--glow-orange), 0 0 22px rgba(255,140,0,0.4); animation: blink 0.55s ease-in-out infinite; }
-        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-        #dValve { font-size: 0.72em; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
-
-        /* ---- Circuit diagram card ---- */
-        .diagram-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 22px;
-            box-shadow: 0 4px 28px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
-        }
-        /* CRT scanline texture */
-        .diagram-card::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: repeating-linear-gradient(
-                to bottom,
-                transparent 0px, transparent 3px,
-                rgba(0,0,0,0.09) 3px, rgba(0,0,0,0.09) 4px
-            );
-            pointer-events: none;
-            z-index: 10;
-            border-radius: 8px;
-        }
-        svg { width: 100%; height: auto; display: block; }
-        .legend-row {
-            display: flex;
-            justify-content: center;
-            gap: 24px;
-            flex-wrap: wrap;
-            margin-top: 12px;
-            font-size: 0.75em;
-            color: var(--dim);
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-        .swatch {
-            display: inline-block;
-            width: 18px; height: 5px;
-            border-radius: 3px;
-            margin-right: 6px;
-            vertical-align: middle;
-        }
-
-        /* ---- Lab card ---- */
-        .lab-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 20px;
-            margin-top: 22px;
-            box-shadow: 0 4px 28px rgba(0,0,0,0.5);
-            text-align: left;
-        }
-        .lab-card h2 {
-            font-size: 1.05em;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: #fff;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
-            margin-bottom: 14px;
-        }
-        .lab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .lab-box {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 14px;
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 0.82em;
-            line-height: 1.85;
-            color: var(--text);
-        }
-        .lab-box-front { border-left: 3px solid var(--red); }
-        .lab-box-rear  { border-left: 3px solid var(--orange); }
-        .lab-box h3 {
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 1.1em;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-
-        /* ---- Chart card ---- */
-        .chart-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 18px;
-            margin-top: 22px;
-            box-shadow: 0 4px 28px rgba(0,0,0,0.5);
-            text-align: left;
-        }
-        .chart-card h2 {
-            font-size: 1.05em;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: #fff;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
-            margin-bottom: 8px;
-        }
-        .chart-card p { color: var(--dim); font-size: 0.88em; margin-bottom: 14px; line-height: 1.55; }
-        .math-var { color: var(--red); font-weight: 700; }
-
-        /* ---- Learning section ---- */
-        .learning-section {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-top: 3px solid var(--green);
-            border-radius: 8px;
-            padding: 24px;
-            margin-top: 22px;
-            box-shadow: 0 4px 28px rgba(0,0,0,0.5);
-            text-align: left;
-        }
-        .learning-section h2 {
-            font-size: 1.1em;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: #fff;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
-            margin-bottom: 14px;
-        }
-        .learning-section h3 { color: var(--blue); font-size: 0.95em; letter-spacing: 0.06em; margin: 16px 0 4px; }
-        .learning-section p  { color: var(--dim); font-size: 0.88em; line-height: 1.6; margin-bottom: 6px; }
-        .theory-block {
-            background: var(--bg);
-            border-left: 3px solid var(--green);
-            border-radius: 0 4px 4px 0;
-            padding: 13px 16px;
-            margin: 8px 0;
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 0.83em;
-            color: var(--green);
-            line-height: 1.7;
-        }
-    </style>
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 700px) {
+      .charts-container { grid-template-columns: 1fr; }
+    }
+    .chart-box {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem;
+      height: 220px;
+    }
+  </style>
 </head>
 <body>
+  <div class="header-bar">
+    <h1>Brake Circuit Telemetry Simulator</h1>
+    <a href="index.html" class="back-link">&larr; System Overview</a>
+  </div>
 
-    <h1>Hydraulic Brake Circuit 🛠️</h1>
-    <div class="subtitle">Pedal → Master Cylinder → Proportioning Valve → Caliper Flow Model</div>
+  <div class="layout-grid">
+    <!-- Controls Sidebar -->
+    <div class="panel">
+      <h3 style="margin-top:0;">Controls</h3>
+      
+      <div class="control-group">
+        <label for="pedalForce">Pedal Force (N): <span id="pedalVal">300</span></label>
+        <input type="range" id="pedalForce" min="0" max="600" step="10" value="300">
+      </div>
 
-    <div class="nav-row">
-        <a class="nav-link" href="index.html">← Back to Thermal Dynamics Lab</a>
+      <div class="control-group">
+        <label for="timeStep">Step Duration dt (s)</label>
+        <input type="number" id="timeStep" value="0.2" step="0.05" min="0.05">
+      </div>
+
+      <div class="btn-group">
+        <button class="btn-apply" onclick="stepSim()">Step (&Delta;t)</button>
+        <button class="btn-reset" onclick="resetSim()">Reset</button>
+      </div>
+
+      <hr style="border-color: var(--border); margin: 1.5rem 0;">
+
+      <h4 style="margin-top: 0;">Vehicle Defaults</h4>
+      <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.8;">
+        • Mass: 245 kg (BAJA)<br>
+        • Tire Grip (&mu;): 0.8987<br>
+        • Pedal Ratio: 4.5:1<br>
+        • Prop. Valve Knee: 25.0 bar<br>
+        • Valve Slope: 0.35
+      </div>
     </div>
 
-    <div class="controls-grid">
-        <div class="section-tag">Pedal &amp; Master Cylinder</div>
-        <label>Pedal Force (N): <input type="number" id="pedalForce" value="300" oninput="recompute()"></label>
-        <label>Pedal Ratio (:1): <input type="number" id="pedalRatio" value="4.5" step="0.1" oninput="recompute()"></label>
-        <label>MC Bore Ø (mm): <input type="number" id="mcBore" value="22.2" step="0.1" oninput="recompute()"></label>
+    <!-- Main Output Area -->
+    <div>
+      <!-- Live Telemetry Readouts -->
+      <div class="readouts">
+        <div class="readout-box">
+          <div class="title">Vehicle Speed</div>
+          <div class="value" id="dispSpeed">11.1 m/s</div>
+        </div>
+        <div class="readout-box">
+          <div class="title">Deceleration</div>
+          <div class="value" id="dispDecel">0.00 m/s²</div>
+        </div>
+        <div class="readout-box">
+          <div class="title">Front Press / Temp</div>
+          <div class="value" id="dispFront">0 bar / 20°C</div>
+        </div>
+        <div class="readout-box">
+          <div class="title">Rear Press / Temp</div>
+          <div class="value" id="dispRear">0 bar / 20°C</div>
+        </div>
+      </div>
 
-        <div class="section-tag">Front Circuit (Secondary — Direct)</div>
-        <label>Piston Ø (mm): <input type="number" id="frontPistonDia" value="42" step="0.5" oninput="recompute()"></label>
-        <label>Pistons / Caliper: <input type="number" id="frontPistonCount" value="2" step="1" oninput="recompute()"></label>
-        <label>Eff. Rotor R (mm): <input type="number" id="frontRotorR" value="110" step="1" oninput="recompute()"></label>
+      <!-- Warnings/Events -->
+      <div class="status-banners">
+        <div id="valveBanner" class="banner banner-warning">
+          ℹ️ Proportioning valve active (limiting rear pressure growth past 25 bar)
+        </div>
+        <div id="lockupBanner" class="banner banner-danger">
+          ⚠️ WHEEL LOCKUP RISK — Friction demand exceeds tire grip limit
+        </div>
+      </div>
 
-        <div class="section-tag">Rear Circuit (Primary — Through Valve)</div>
-        <label>Piston Ø (mm): <input type="number" id="rearPistonDia" value="30" step="0.5" oninput="recompute()"></label>
-        <label>Pistons / Caliper: <input type="number" id="rearPistonCount" value="1" step="1" oninput="recompute()"></label>
-        <label>Eff. Rotor R (mm): <input type="number" id="rearRotorR" value="90" step="1" oninput="recompute()"></label>
-
-        <div class="section-tag">Proportioning Valve &amp; Friction</div>
-        <label>Knee Pressure (bar): <input type="number" id="kneeBar" value="25" step="1" oninput="recompute()"></label>
-        <label>Valve Slope (0–1): <input type="number" id="valveSlope" value="0.35" step="0.05" oninput="recompute()"></label>
-        <label>Pad μ: <input type="number" id="padMu" value="0.45" step="0.01" oninput="recompute()"></label>
+      <!-- Charts Output -->
+      <div class="charts-container">
+        <div class="chart-box"><canvas id="chartSpeed"></canvas></div>
+        <div class="chart-box"><canvas id="chartForce"></canvas></div>
+        <div class="chart-box"><canvas id="chartPressure"></canvas></div>
+        <div class="chart-box"><canvas id="chartTemp"></canvas></div>
+      </div>
     </div>
+  </div>
 
-    <div class="btn-wrap" id="btnWrap">
-        <div class="pulse-ring"></div>
-        <div class="pulse-ring"></div>
-        <div class="pulse-ring"></div>
-        <button id="brakeBtn">HOLD TO BRAKE</button>
-    </div>
+  <script>
+    // --- Hydraulic System Physics Engine (Direct JS Port) ---
+    const GRAVITY = 9.80665;
 
-    <!-- Arc-gauge dashboard -->
-    <div class="dashboard">
-        <div class="gauge-wrap">
-            <div class="g-label">Pedal Input</div>
-            <svg class="gauge-svg" viewBox="0 0 96 80">
-                <path class="g-track" d="M13,72 A36,36 0 1 1 83,72"/>
-                <path class="g-arc g-blue" id="g-pedal" d="M13,72 A36,36 0 1 1 83,72"/>
-                <text class="g-val" id="dPedal" x="48" y="48">0</text>
-                <text class="g-unit" x="48" y="62">N</text>
-            </svg>
-        </div>
-        <div class="gauge-wrap">
-            <div class="g-label">MC Pressure</div>
-            <svg class="gauge-svg" viewBox="0 0 96 80">
-                <path class="g-track" d="M13,72 A36,36 0 1 1 83,72"/>
-                <path class="g-arc g-blue" id="g-mc" d="M13,72 A36,36 0 1 1 83,72"/>
-                <text class="g-val" id="dMc" x="48" y="48">0</text>
-                <text class="g-unit" x="48" y="62">bar</text>
-            </svg>
-        </div>
-        <div class="gauge-wrap">
-            <div class="g-label">Front Line</div>
-            <svg class="gauge-svg" viewBox="0 0 96 80">
-                <path class="g-track" d="M13,72 A36,36 0 1 1 83,72"/>
-                <path class="g-arc g-red" id="g-front" d="M13,72 A36,36 0 1 1 83,72"/>
-                <text class="g-val" id="dFront" x="48" y="48" style="fill:var(--red)">0</text>
-                <text class="g-unit" x="48" y="62">bar</text>
-            </svg>
-        </div>
-        <div class="gauge-wrap">
-            <div class="g-label">Rear Line</div>
-            <svg class="gauge-svg" viewBox="0 0 96 80">
-                <path class="g-track" d="M13,72 A36,36 0 1 1 83,72"/>
-                <path class="g-arc g-orange" id="g-rear" d="M13,72 A36,36 0 1 1 83,72"/>
-                <text class="g-val" id="dRear" x="48" y="48" style="fill:var(--orange)">0</text>
-                <text class="g-unit" x="48" y="62">bar</text>
-            </svg>
-        </div>
-        <div class="gauge-wrap">
-            <div class="g-label">Force Gain</div>
-            <svg class="gauge-svg" viewBox="0 0 96 80">
-                <path class="g-track" d="M13,72 A36,36 0 1 1 83,72"/>
-                <path class="g-arc g-green" id="g-gain" d="M13,72 A36,36 0 1 1 83,72"/>
-                <text class="g-val" id="dGain" x="48" y="48" style="fill:var(--green)">0</text>
-                <text class="g-unit" x="48" y="62">× gain</text>
-            </svg>
-        </div>
-        <div class="valve-box">
-            <div class="g-label">Valve Status</div>
-            <div class="valve-led open" id="valveLed"></div>
-            <div id="dValve">OPEN</div>
-        </div>
-    </div>
+    class HydraulicBrakeSystem {
+      constructor() {
+        this.vehicle_mass = 245.0;
+        this.wheel_radius_m = 0.28;
+        this.tire_mu = 0.8987;
+        this.pedal_ratio = 4.5;
+        this.mc_bore_mm = 22.2;
+        
+        this.front_piston_dia_mm = 42.0;
+        this.front_piston_count = 2;
+        this.front_rotor_radius_m = 0.110;
 
-    <div class="diagram-card">
-        <svg id="circuitSvg" viewBox="0 0 900 780" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <pattern id="bgrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M40,0 L0,0 L0,40" fill="none" stroke="rgba(52,152,219,0.065)" stroke-width="0.5"/>
-                </pattern>
-            </defs>
+        this.rear_piston_dia_mm = 30.0;
+        this.rear_piston_count = 1;
+        this.rear_rotor_radius_m = 0.090;
 
-            <!-- Dark background + grid -->
-            <rect width="900" height="780" fill="#06090f" rx="6"/>
-            <rect width="900" height="780" fill="url(#bgrid)" rx="6"/>
+        this.knee_bar = 25.0;
+        this.valve_slope = 0.35;
 
-            <!-- Axis labels -->
-            <text x="450" y="26" text-anchor="middle" font-size="12" font-weight="700" fill="rgba(74,100,128,0.7)" letter-spacing="4" font-family="'Barlow Condensed',sans-serif">FRONT AXLE</text>
-            <text x="450" y="757" text-anchor="middle" font-size="12" font-weight="700" fill="rgba(74,100,128,0.7)" letter-spacing="4" font-family="'Barlow Condensed',sans-serif">REAR AXLE</text>
+        this.base_pad_mu = 0.45;
+        this.current_front_mu = 0.45;
+        this.current_rear_mu = 0.45;
 
-            <!-- FRONT CIRCUIT PIPES (secondary, direct) -->
-            <path id="pipeFrontL" d="M 520,360 L 520,225 L 150,225 L 150,155" fill="none" stroke="#192438" stroke-width="7" stroke-linejoin="round" stroke-dasharray="10 8"/>
-            <path id="pipeFrontR" d="M 520,360 L 520,225 L 750,225 L 750,155" fill="none" stroke="#192438" stroke-width="7" stroke-linejoin="round" stroke-dasharray="10 8"/>
-            <text x="540" y="218" font-size="10" fill="rgba(255,51,51,0.5)" font-weight="700" font-family="'Barlow Condensed',sans-serif" letter-spacing="1.5">FRONT CIRCUIT — SECONDARY (DIRECT)</text>
+        this.front_thermal_capacity = 121.175;
+        this.rear_thermal_capacity = 121.175;
+        this.ambient_temp_c = 20.0;
 
-            <!-- REAR CIRCUIT PIPES (primary, through valve) -->
-            <path id="pipeRearL" d="M 390,400 L 390,460 M 390,500 L 390,565 L 150,565 L 150,605" fill="none" stroke="#192438" stroke-width="7" stroke-linejoin="round" stroke-dasharray="10 8"/>
-            <path id="pipeRearR" d="M 390,400 L 390,460 M 390,500 L 390,565 L 750,565 L 750,605" fill="none" stroke="#192438" stroke-width="7" stroke-linejoin="round" stroke-dasharray="10 8"/>
-            <text x="410" y="586" font-size="10" fill="rgba(255,140,0,0.5)" font-weight="700" font-family="'Barlow Condensed',sans-serif" letter-spacing="1.5">REAR CIRCUIT — PRIMARY (VALVE-LIMITED)</text>
+        this.reset(11.11);
+      }
 
-            <!-- PROPORTIONING VALVE -->
-            <g id="valveGroup">
-                <rect x="355" y="453" width="70" height="54" rx="7" fill="#0a1020" stroke="#192438" stroke-width="2"/>
-                <rect x="360" y="458" width="60" height="44" rx="5" fill="#0d1525" stroke="#1e3a5f" stroke-width="1"/>
-                <circle id="valveDot" cx="390" cy="473" r="5" fill="#00e676"/>
-                <text x="390" y="490" text-anchor="middle" font-size="8" fill="#4a6480" font-weight="700" font-family="'Barlow Condensed',sans-serif" letter-spacing="1">P-VALVE</text>
-            </g>
-            <text x="436" y="484" font-size="10" fill="rgba(74,100,128,0.55)" font-family="'Barlow Condensed',sans-serif" letter-spacing="0.5">Proportioning Valve</text>
+      reset(speed) {
+        this.front_temp = this.ambient_temp_c;
+        this.rear_temp = this.ambient_temp_c;
+        this.current_front_mu = this.base_pad_mu;
+        this.current_rear_mu = this.base_pad_mu;
+        this.vehicle_speed = speed;
+      }
 
-            <!-- RESERVOIR -->
-            <rect x="426" y="286" width="98" height="60" rx="7" fill="#080c18" stroke="#1e3a5f" stroke-width="1.5"/>
-            <rect x="430" y="290" width="90" height="52" rx="5" fill="rgba(59,167,255,0.06)" stroke="rgba(59,167,255,0.25)" stroke-width="1"/>
-            <text x="475" y="318" text-anchor="middle" font-size="9" fill="#3ba7ff" font-weight="700" font-family="'Barlow Condensed',sans-serif" letter-spacing="2">FLUID</text>
-            <text x="475" y="332" text-anchor="middle" font-size="9" fill="#3ba7ff" font-weight="700" font-family="'Barlow Condensed',sans-serif" letter-spacing="2">RESERVOIR</text>
-            <line x1="452" y1="346" x2="452" y2="362" stroke="rgba(59,167,255,0.4)" stroke-width="4"/>
-            <line x1="498" y1="346" x2="498" y2="362" stroke="rgba(59,167,255,0.4)" stroke-width="4"/>
+      _bore_area_m2(dia_mm) {
+        const radius_m = dia_mm / 2000.0;
+        return Math.PI * Math.pow(radius_m, 2);
+      }
 
-            <!-- MASTER CYLINDER -->
-            <rect id="mcBody" x="316" y="358" width="248" height="46" rx="6" fill="#0a1020" stroke="#1e3a5f" stroke-width="1.5"/>
-            <line x1="323" y1="370" x2="560" y2="370" stroke="rgba(59,167,255,0.06)" stroke-width="1"/>
-            <line x1="323" y1="394" x2="560" y2="394" stroke="rgba(59,167,255,0.06)" stroke-width="1"/>
-            <rect id="primaryPiston"   x="335" y="361" width="14" height="40" rx="2" fill="#1e2d44" stroke="#3ba7ff" stroke-width="1" opacity="0.9"/>
-            <rect id="secondaryPiston" x="435" y="361" width="14" height="40" rx="2" fill="#1e2d44" stroke="#3ba7ff" stroke-width="1" opacity="0.9"/>
-            <text x="440" y="418" text-anchor="middle" font-size="10" fill="rgba(74,100,128,0.6)" font-weight="700" font-family="'Barlow Condensed',sans-serif" letter-spacing="2">TANDEM MASTER CYLINDER</text>
-            <text id="mcLabel" x="440" y="434" text-anchor="middle" font-size="11" fill="#3ba7ff" font-weight="700" font-family="'Share Tech Mono',monospace">0.0 bar</text>
+      mc_area_m2() { return this._bore_area_m2(this.mc_bore_mm); }
+      front_piston_area_m2() { return this._bore_area_m2(this.front_piston_dia_mm) * this.front_piston_count; }
+      rear_piston_area_m2() { return this._bore_area_m2(this.rear_piston_dia_mm) * this.rear_piston_count; }
 
-            <!-- PEDAL -->
-            <line x1="260" y1="381" x2="335" y2="381" stroke="rgba(59,167,255,0.6)" stroke-width="5" stroke-linecap="round" id="pushRod"/>
-            <g id="pedalGroup">
-                <line x1="180" y1="300" x2="140" y2="420" stroke="#8ab0d0" stroke-width="7" stroke-linecap="round"/>
-                <rect x="104" y="413" width="52" height="23" rx="5" fill="#e74c3c" stroke="rgba(255,80,80,0.6)" stroke-width="1.5"/>
-            </g>
-            <circle cx="180" cy="300" r="6" fill="#3ba7ff" stroke="#0a0e17" stroke-width="2"/>
-            <text x="130" y="458" text-anchor="middle" font-size="10" fill="rgba(74,100,128,0.6)" font-weight="700" font-family="'Barlow Condensed',sans-serif" letter-spacing="1">BRAKE PEDAL</text>
+      _fade_factor(temp_c, fade_start_c = 250.0, fade_rate = 0.005, floor = 0.15) {
+        if (temp_c <= fade_start_c) return 1.0;
+        return Math.max(floor, 1.0 - (temp_c - fade_start_c) * fade_rate);
+      }
 
-            <g id="wheels"></g>
-        </svg>
+      apply_brakes(pedal_force_n, dt) {
+        const pushrod_force_n = pedal_force_n * this.pedal_ratio;
+        const mc_pressure_pa = pushrod_force_n / this.mc_area_m2();
+        const mc_pressure_bar = mc_pressure_pa / 1e5;
 
-        <div class="legend-row">
-            <span><span class="swatch" style="background:#192438;"></span>Unpressurized</span>
-            <span><span class="swatch" style="background:var(--red);box-shadow:0 0 7px var(--glow-red);"></span>Front (pressurized)</span>
-            <span><span class="swatch" style="background:var(--orange);box-shadow:0 0 7px var(--glow-orange);"></span>Rear (pressurized)</span>
-        </div>
-    </div>
-
-    <div class="lab-card">
-        <h2>Live Clamping &amp; Torque Readout</h2>
-        <div class="lab-grid">
-            <div class="lab-box lab-box-front">
-                <h3 style="color:var(--red)">▶ Front Caliper (each)</h3>
-                <div id="frontLabOutput">—</div>
-            </div>
-            <div class="lab-box lab-box-rear">
-                <h3 style="color:var(--orange)">▶ Rear Caliper (each)</h3>
-                <div id="rearLabOutput">—</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="chart-card">
-        <h2>Proportioning Valve Response Curve</h2>
-        <p>Line pressure at each axle as pedal force sweeps 0→2000 N. Front tracks MC 1:1.
-        Rear follows until the <span class="math-var">knee pressure</span>, after which the valve throttles rear pressure rise —
-        preventing rear-wheel lockup under hard braking when weight transfers forward.</p>
-        <canvas id="curveChart" height="110" style="background:transparent;"></canvas>
-    </div>
-
-    <div class="learning-section">
-        <h2>🧠 Hydraulics Knowledge Center</h2>
-        <p>Hold the pedal above. Every stage — pedal leverage, hydraulic multiplication, the proportioning valve, and caliper clamp force — is calculated live from your inputs.</p>
-
-        <h3>1. Pedal Leverage</h3>
-        <p>The pedal is a lever. Pivot geometry multiplies foot force before it reaches the master cylinder pushrod (<span class="math-var">pedal ratio</span>, typically 4:1–6:1 in race applications):</p>
-        <div class="theory-block">Pushrod Force (N) = Pedal Force (N) × Pedal Ratio</div>
-
-        <h3>2. Pascal's Law &amp; Hydraulic Pressure</h3>
-        <p>The pushrod compresses fluid in the MC bore. Pressure (force per area) is transmitted equally to every line and caliper piston connected to that circuit — brake fluid is incompressible:</p>
-        <div class="theory-block">Pressure (Pa) = Pushrod Force (N) / Bore Area (m²),  where Bore Area = π × (d/2)²</div>
-
-        <h3>3. Why the Master Cylinder Is Split in Two</h3>
-        <p>A <span class="math-var">tandem (dual-circuit) master cylinder</span> has two pistons in series, each feeding an independent circuit. If one circuit leaks, the other still builds pressure — partial braking rather than total failure. This diagram routes the secondary piston direct to the fronts; the primary piston goes through the proportioning valve to the rears.</p>
-
-        <h3>4. The Proportioning Valve</h3>
-        <p>Under hard braking, weight transfers forward. Rear tires carry less load, so they can supply less grip. Without a valve, equal pressure would lock the rears first. The valve limits how far rear pressure can rise past a knee point:</p>
-        <div class="theory-block">Rear Pressure = MC Pressure,                           if MC ≤ Knee
-Rear Pressure = Knee + (MC − Knee) × Slope,           if MC &gt; Knee</div>
-
-        <h3>5. Caliper Clamp Force &amp; Brake Torque</h3>
-        <p>Line pressure acts on caliper piston faces, clamping the pad onto the rotor. That force at the effective friction radius — on both pad faces — generates stopping torque, the same value that feeds the thermal model on the main page:</p>
-        <div class="theory-block">Clamp Force (N)    = Line Pressure (Pa) × Piston Area (m²) × Piston Count
-Brake Torque (N·m) = 2 × Pad μ × Clamp Force × Effective Rotor Radius (m)</div>
-        <p>The <span class="math-var">Force Gain</span> gauge shows how a few hundred newtons at the pedal turns into multi-kilonewton clamp force at each caliper — pedal leverage and Pascal's Law doing the work.</p>
-    </div>
-
-    <script>
-        /* ---- Gauge arc constants ----
-           240° arc, center (48,36+18=54? recalc:
-           Center (48,53), r=36
-           Start: 210° math → SVG x=48+36*cos(210°)=48-31.2=16.8, y=53-36*sin(210°)=53+18=71 ≈ (13,72)
-           End:   330° math → SVG x=48+36*cos(330°)=48+31.2=79.2, y=53-36*sin(330°)=53+18=71 ≈ (83,72)
-           Arc length = 240/360 * 2π * 36 = 150.8
-        */
-        const GAUGE_LEN = 150.8;
-
-        function setGauge(id, pct) {
-            const el = document.getElementById('g-' + id);
-            if (el) el.setAttribute('stroke-dasharray', `${Math.max(0, Math.min(1, pct)) * GAUGE_LEN} 1000`);
+        const front_bar = mc_pressure_bar;
+        let rear_bar = mc_pressure_bar;
+        if (mc_pressure_bar > this.knee_bar) {
+          rear_bar = this.knee_bar + (mc_pressure_bar - this.knee_bar) * this.valve_slope;
         }
+        const valve_limiting = mc_pressure_bar > this.knee_bar;
 
-        // ---------- Wheel layout ----------
-        const wheelDefs = [
-            { id: 'FL', cx: 150, cy: 110, axle: 'front', stubDy:  45 },
-            { id: 'FR', cx: 750, cy: 110, axle: 'front', stubDy:  45 },
-            { id: 'RL', cx: 150, cy: 650, axle: 'rear',  stubDy: -45 },
-            { id: 'RR', cx: 750, cy: 650, axle: 'rear',  stubDy: -45 }
-        ];
-        const wheels = {};
-        const svgNS = 'http://www.w3.org/2000/svg';
+        const front_clamp_n = front_bar * 1e5 * this.front_piston_area_m2();
+        const rear_clamp_n = rear_bar * 1e5 * this.rear_piston_area_m2();
 
-        function mkEl(tag, attrs) {
-            const el = document.createElementNS(svgNS, tag);
-            for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
-            return el;
+        const front_torque_per_wheel_nm = 2 * this.current_front_mu * front_clamp_n * this.front_rotor_radius_m;
+        const rear_torque_per_wheel_nm = 2 * this.current_rear_mu * rear_clamp_n * this.rear_rotor_radius_m;
+        const total_torque_nm = 2 * front_torque_per_wheel_nm + 2 * rear_torque_per_wheel_nm;
+
+        const raw_friction_force_n = total_torque_nm / this.wheel_radius_m;
+        const max_tire_force_n = this.tire_mu * this.vehicle_mass * GRAVITY;
+        const wheel_locking = raw_friction_force_n > max_tire_force_n;
+        const friction_force_n = Math.min(raw_friction_force_n, max_tire_force_n);
+
+        const deceleration = friction_force_n / this.vehicle_mass;
+
+        const omega = this.wheel_radius_m ? (this.vehicle_speed / this.wheel_radius_m) : 0.0;
+        const front_power_w = front_torque_per_wheel_nm * omega * 2;
+        const rear_power_w = rear_torque_per_wheel_nm * omega * 2;
+
+        this.front_temp += (front_power_w * dt) / this.front_thermal_capacity;
+        this.rear_temp += (rear_power_w * dt) / this.rear_thermal_capacity;
+        this.front_temp -= (this.front_temp - this.ambient_temp_c) * 0.05 * dt;
+        this.rear_temp -= (this.rear_temp - this.ambient_temp_c) * 0.05 * dt;
+
+        this.current_front_mu = this.base_pad_mu * this._fade_factor(this.front_temp);
+        this.current_rear_mu = this.base_pad_mu * this._fade_factor(this.rear_temp);
+
+        return {
+          pushrod_force_n,
+          mc_pressure_bar,
+          front_line_bar: front_bar,
+          rear_line_bar: rear_bar,
+          valve_limiting,
+          deceleration,
+          wheel_locking,
+          front_temp_c: this.front_temp,
+          rear_temp_c: this.rear_temp
+        };
+      }
+    }
+
+    // --- Application & Charting Setup ---
+    const sim = new HydraulicBrakeSystem();
+    let currentTime = 0.0;
+    let history = { time: [0], speed: [11.11], force: [0], front_bar: [0], rear_bar: [0], front_temp: [20], rear_temp: [20] };
+
+    // DOM Elements
+    const pedalSlider = document.getElementById('pedalForce');
+    const pedalVal = document.getElementById('pedalVal');
+    pedalSlider.oninput = () => pedalVal.innerText = pedalSlider.value;
+
+    function createChart(id, label, color) {
+      const ctx = document.getElementById(id).getContext('2d');
+      return new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: history.time,
+          datasets: Array.isArray(label) ? label.map((l, i) => ({
+            label: l, data: [], borderColor: color[i], borderWidth: 2, pointRadius: 2, fill: false
+          })) : [{
+            label: label, data: [], borderColor: color, borderWidth: 2, pointRadius: 2, fill: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+            y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+          },
+          plugins: { legend: { labels: { color: '#f8fafc' } } }
         }
+      });
+    }
 
-        function buildWheel(def) {
-            const g = mkEl('g', { id: 'wheel-' + def.id });
+    const cSpeed = createChart('chartSpeed', 'Speed (m/s)', '#38bdf8');
+    const cForce = createChart('chartForce', 'Pedal Force (N)', '#22c55e');
+    const cPress = createChart('chartPressure', ['Front Line (bar)', 'Rear Line (bar)'], ['#ef4444', '#f97316']);
+    const cTemp = createChart('chartTemp', ['Front Temp (°C)', 'Rear Temp (°C)'], ['#ef4444', '#f97316']);
 
-            // Tyre
-            g.appendChild(mkEl('circle', { cx: def.cx, cy: def.cy, r: 46, fill: '#06090f', stroke: '#3ba7ff', 'stroke-width': 2.5 }));
-            // Inner hub ring
-            g.appendChild(mkEl('circle', { cx: def.cx, cy: def.cy, r: 20, fill: '#0d1525', stroke: '#1e2d44', 'stroke-width': 1.5 }));
-            // Spoke lines
-            for (let a = 0; a < 360; a += 60) {
-                const rad = a * Math.PI / 180;
-                g.appendChild(mkEl('line', {
-                    x1: def.cx + 20 * Math.cos(rad), y1: def.cy + 20 * Math.sin(rad),
-                    x2: def.cx + 38 * Math.cos(rad), y2: def.cy + 38 * Math.sin(rad),
-                    stroke: '#192438', 'stroke-width': 1.5
-                }));
-            }
-            // Rotor disc
-            const rotor = mkEl('rect', {
-                id: 'rotor-' + def.id,
-                x: def.cx - 4, y: def.cy - 32,
-                width: 8, height: 64,
-                fill: '#192438', stroke: '#2c3e50', 'stroke-width': 1.5
-            });
-            g.appendChild(rotor);
-            // Caliper bracket
-            g.appendChild(mkEl('rect', {
-                x: def.cx - 27, y: def.cy - 39,
-                width: 54, height: 78, rx: 6,
-                fill: 'none', stroke: '#3ba7ff', 'stroke-width': 1.8, opacity: 0.4
-            }));
-            // Pistons + pads
-            ['L', 'R'].forEach(side => {
-                g.appendChild(mkEl('rect', {
-                    id: `piston-${def.id}-${side}`,
-                    y: def.cy - 14, width: 9, height: 28,
-                    fill: '#1e2d44', stroke: '#3ba7ff', 'stroke-width': 0.7
-                }));
-                g.appendChild(mkEl('rect', {
-                    id: `pad-${def.id}-${side}`,
-                    y: def.cy - 24, width: 6, height: 48,
-                    fill: '#192438'
-                }));
-            });
-            // Brake line stub
-            g.appendChild(mkEl('circle', {
-                cx: def.cx, cy: def.cy + def.stubDy, r: 4,
-                fill: '#3ba7ff', opacity: 0.55
-            }));
-            // Wheel ID label
-            g.appendChild(Object.assign(mkEl('text', {
-                x: def.cx, y: def.cy + 63,
-                'text-anchor': 'middle', 'font-size': 13, 'font-weight': 700,
-                fill: '#4a6480', 'font-family': "'Barlow Condensed',sans-serif", 'letter-spacing': 2
-            }), { textContent: def.id }));
-            // Data readout
-            const sub = Object.assign(mkEl('text', {
-                id: 'sub-' + def.id,
-                x: def.cx, y: def.cy + 76,
-                'text-anchor': 'middle', 'font-size': 9,
-                fill: '#3a5070', 'font-family': "'Share Tech Mono',monospace"
-            }), { textContent: '0 N · 0 N·m' });
-            g.appendChild(sub);
+    function updateCharts() {
+      cSpeed.data.labels = history.time;
+      cSpeed.data.datasets[0].data = history.speed;
+      cSpeed.update();
 
-            document.getElementById('wheels').appendChild(g);
-            wheels[def.id] = {
-                def, sub,
-                pistonL: g.querySelector(`#piston-${def.id}-L`),
-                pistonR: g.querySelector(`#piston-${def.id}-R`),
-                padL:    g.querySelector(`#pad-${def.id}-L`),
-                padR:    g.querySelector(`#pad-${def.id}-R`),
-                rotor:   g.querySelector(`#rotor-${def.id}`)
-            };
-        }
-        wheelDefs.forEach(buildWheel);
+      cForce.data.labels = history.time;
+      cForce.data.datasets[0].data = history.force;
+      cForce.update();
 
-        function layoutWheelClamp(w, clearance) {
-            const cx = w.def.cx;
-            w.padL.setAttribute('x', cx - 4 - clearance - 6);
-            w.padR.setAttribute('x', cx + 4 + clearance);
-            w.pistonL.setAttribute('x', cx - 4 - clearance - 16);
-            w.pistonR.setAttribute('x', cx + 4 + clearance + 7);
-        }
-        Object.values(wheels).forEach(w => layoutWheelClamp(w, 7));
+      cPress.data.labels = history.time;
+      cPress.data.datasets[0].data = history.front_bar;
+      cPress.data.datasets[1].data = history.rear_bar;
+      cPress.update();
 
-        // ---------- Physics ----------
-        let braking = false, frac = 0, dashOffset = 0, maxVals = null;
+      cTemp.data.labels = history.time;
+      cTemp.data.datasets[0].data = history.front_temp;
+      cTemp.data.datasets[1].data = history.rear_temp;
+      cTemp.update();
+    }
 
-        function setBraking(state) {
-            braking = state;
-            document.body.classList.toggle('braking', state);
-        }
+    function stepSim() {
+      if (sim.vehicle_speed <= 0) return;
 
-        const btn = document.getElementById('brakeBtn');
-        btn.addEventListener('mousedown',  () => setBraking(true));
-        btn.addEventListener('mouseup',    () => setBraking(false));
-        btn.addEventListener('mouseleave', () => setBraking(false));
-        btn.addEventListener('touchstart', e => { e.preventDefault(); setBraking(true); });
-        btn.addEventListener('touchend',   e => { e.preventDefault(); setBraking(false); });
+      const dt = parseFloat(document.getElementById('timeStep').value) || 0.2;
+      const force = parseFloat(pedalSlider.value);
 
-        function num(id) { return parseFloat(document.getElementById(id).value) || 0; }
+      const res = sim.apply_brakes(force, dt);
+      sim.vehicle_speed = Math.max(0.0, sim.vehicle_speed - res.deceleration * dt);
+      currentTime += dt;
 
-        function computeAt(pedalN) {
-            const ratio   = num('pedalRatio'),  mcBoreM = num('mcBore') / 1000;
-            const fPistM  = num('frontPistonDia') / 1000, fCnt = num('frontPistonCount'), fRotM = num('frontRotorR') / 1000;
-            const rPistM  = num('rearPistonDia')  / 1000, rCnt = num('rearPistonCount'),  rRotM = num('rearRotorR')  / 1000;
-            const knee    = num('kneeBar'), slope = num('valveSlope'), mu = num('padMu');
+      // Push telemetry history
+      history.time.push(currentTime.toFixed(1));
+      history.speed.push(sim.vehicle_speed.toFixed(2));
+      history.force.push(force);
+      history.front_bar.push(res.front_line_bar.toFixed(1));
+      history.rear_bar.push(res.rear_line_bar.toFixed(1));
+      history.front_temp.push(res.front_temp_c.toFixed(0));
+      history.rear_temp.push(res.rear_temp_c.toFixed(0));
 
-            const pushRodN   = pedalN * ratio;
-            const mcArea     = Math.PI * Math.pow(mcBoreM / 2, 2);
-            const mcBar      = mcArea > 0 ? (pushRodN / mcArea) / 1e5 : 0;
-            const frontBar   = mcBar;
-            const rearBar    = mcBar <= knee ? mcBar : knee + (mcBar - knee) * slope;
+      // Update UI readouts
+      document.getElementById('dispSpeed').innerText = `${sim.vehicle_speed.toFixed(1)} m/s`;
+      document.getElementById('dispDecel').innerText = `${res.deceleration.toFixed(2)} m/s²`;
+      document.getElementById('dispFront').innerText = `${res.front_line_bar.toFixed(1)} bar / ${res.front_temp_c.toFixed(0)}°C`;
+      document.getElementById('dispRear').innerText = `${res.rear_line_bar.toFixed(1)} bar / ${res.rear_temp_c.toFixed(0)}°C`;
 
-            const fArea = Math.PI * Math.pow(fPistM / 2, 2);
-            const rArea = Math.PI * Math.pow(rPistM / 2, 2);
+      document.getElementById('valveBanner').style.display = res.valve_limiting ? 'block' : 'none';
+      document.getElementById('lockupBanner').style.display = res.wheel_locking ? 'block' : 'none';
 
-            const frontClampN = frontBar * 1e5 * fArea * fCnt;
-            const rearClampN  = rearBar  * 1e5 * rArea * rCnt;
-            const frontTorque = 2 * mu * frontClampN * fRotM;
-            const rearTorque  = 2 * mu * rearClampN  * rRotM;
+      updateCharts();
+    }
 
-            return { pedalN, mcBar, frontBar, rearBar, frontClampN, rearClampN, frontTorque, rearTorque, knee };
-        }
+    function resetSim() {
+      sim.reset(11.11);
+      currentTime = 0.0;
+      history = { time: [0], speed: [11.11], force: [0], front_bar: [0], rear_bar: [0], front_temp: [20], rear_temp: [20] };
+      
+      document.getElementById('dispSpeed').innerText = `11.1 m/s`;
+      document.getElementById('dispDecel').innerText = `0.00 m/s²`;
+      document.getElementById('dispFront').innerText = `0 bar / 20°C`;
+      document.getElementById('dispRear').innerText = `0 bar / 20°C`;
+      document.getElementById('valveBanner').style.display = 'none';
+      document.getElementById('lockupBanner').style.display = 'none';
 
-        let curveChart = null;
+      updateCharts();
+    }
 
-        function recompute() {
-            maxVals = computeAt(num('pedalForce'));
-
-            const fPts = [], rPts = [];
-            for (let p = 0; p <= 2000; p += 50) {
-                const v = computeAt(p);
-                fPts.push({ x: p, y: v.frontBar });
-                rPts.push({ x: p, y: v.rearBar });
-            }
-
-            if (!curveChart) {
-                Chart.defaults.color = '#4a6480';
-                Chart.defaults.borderColor = 'rgba(52,152,219,0.09)';
-                const ctx = document.getElementById('curveChart').getContext('2d');
-                curveChart = new Chart(ctx, {
-                    type: 'line',
-                    data: { datasets: [
-                        { label: 'Front line (bar)', data: fPts, borderColor: '#ff3333', pointRadius: 0, borderWidth: 2.5 },
-                        { label: 'Rear line (bar)',  data: rPts, borderColor: '#ff8c00', pointRadius: 0, borderWidth: 2.5 }
-                    ]},
-                    options: {
-                        responsive: true, animation: false, parsing: false,
-                        plugins: {
-                            legend: { labels: { color: '#8ab0d0', font: { family: "'Barlow Condensed',sans-serif", size: 13 }, boxWidth: 18 } }
-                        },
-                        scales: {
-                            x: { type: 'linear', title: { display: true, text: 'Pedal Force (N)', color: '#4a6480' }, ticks: { color: '#4a6480' }, grid: { color: 'rgba(52,152,219,0.08)' } },
-                            y: { title: { display: true, text: 'Line Pressure (bar)', color: '#4a6480' }, ticks: { color: '#4a6480' }, grid: { color: 'rgba(52,152,219,0.08)' }, min: 0 }
-                        }
-                    }
-                });
-            } else {
-                curveChart.data.datasets[0].data = fPts;
-                curveChart.data.datasets[1].data = rPts;
-                curveChart.update();
-            }
-            render();
-        }
-
-        function lerp(a, b, t) {
-            const ah = a.match(/\w\w/g).map(x=>parseInt(x,16));
-            const bh = b.match(/\w\w/g).map(x=>parseInt(x,16));
-            return '#' + ah.map((c,i)=>Math.round(c+(bh[i]-c)*t).toString(16).padStart(2,'0')).join('');
-        }
-
-        function render() {
-            if (!maxVals) return;
-            const v = maxVals;
-            const ped  = v.pedalN    * frac,  mc   = v.mcBar    * frac;
-            const fBar = v.frontBar  * frac,  rBar = v.rearBar  * frac;
-            const fClamp = v.frontClampN * frac, rClamp = v.rearClampN * frac;
-            const fTq    = v.frontTorque * frac, rTq    = v.rearTorque * frac;
-            const gain   = ped > 1 ? fClamp / ped : 0;
-
-            // Gauge text
-            document.getElementById('dPedal').textContent = ped.toFixed(0);
-            document.getElementById('dMc').textContent    = mc.toFixed(1);
-            document.getElementById('dFront').textContent = fBar.toFixed(1);
-            document.getElementById('dRear').textContent  = rBar.toFixed(1);
-            document.getElementById('dGain').textContent  = gain.toFixed(1);
-
-            // Arc gauges
-            setGauge('pedal', ped  / 500);
-            setGauge('mc',    mc   / 120);
-            setGauge('front', fBar / 120);
-            setGauge('rear',  rBar / 120);
-            setGauge('gain',  gain / 50);
-
-            // Valve status
-            const limiting = v.mcBar * frac > v.knee && frac > 0.02;
-            document.getElementById('dValve').textContent  = limiting ? 'LIMITING' : 'OPEN';
-            document.getElementById('dValve').style.color  = limiting ? '#ff8c00' : '#00e676';
-            document.getElementById('valveLed').className  = 'valve-led ' + (limiting ? 'limiting' : 'open');
-
-            const vDot = document.getElementById('valveDot');
-            if (vDot) {
-                vDot.setAttribute('fill', limiting ? '#ff8c00' : '#00e676');
-                vDot.style.filter = limiting ? 'drop-shadow(0 0 5px rgba(255,140,0,0.95))' : 'drop-shadow(0 0 4px rgba(0,230,118,0.8))';
-            }
-            const vBox = document.getElementById('valveGroup')?.children[0];
-            if (vBox) {
-                vBox.setAttribute('stroke', limiting ? '#ff8c00' : '#192438');
-                vBox.style.filter = limiting ? 'drop-shadow(0 0 8px rgba(255,140,0,0.4))' : '';
-            }
-
-            // MC readout + piston travel + glow
-            document.getElementById('mcLabel').textContent = mc.toFixed(1) + ' bar';
-            document.getElementById('primaryPiston').setAttribute('x', 335 + 22 * frac);
-            document.getElementById('secondaryPiston').setAttribute('x', 435 + 14 * frac);
-            document.getElementById('pushRod').setAttribute('x2', 335 + 22 * frac);
-            document.getElementById('mcBody').style.filter = frac > 0.05
-                ? `drop-shadow(0 0 ${Math.round(8*frac)}px rgba(59,167,255,${0.45*frac}))`
-                : '';
-
-            // Pedal rotation
-            document.getElementById('pedalGroup').setAttribute('transform', `rotate(${-16 * frac} 180 300)`);
-
-            // Pipe colors + glow animation
-            dashOffset -= 1 + frac * 14;
-            const fCol = lerp('#192438', '#ff3333', Math.min(1, fBar / 50));
-            const rCol = lerp('#192438', '#ff8c00', Math.min(1, rBar / 50));
-            const fGlow = frac > 0.05 ? `drop-shadow(0 0 ${Math.round(8*frac)}px rgba(255,51,51,0.85))`  : 'none';
-            const rGlow = frac > 0.05 ? `drop-shadow(0 0 ${Math.round(8*frac)}px rgba(255,140,0,0.85))` : 'none';
-
-            ['pipeFrontL','pipeFrontR'].forEach(id => {
-                const el = document.getElementById(id);
-                el.setAttribute('stroke', fCol);
-                el.setAttribute('stroke-dashoffset', dashOffset);
-                el.style.filter = fGlow;
-            });
-            ['pipeRearL','pipeRearR'].forEach(id => {
-                const el = document.getElementById(id);
-                el.setAttribute('stroke', rCol);
-                el.setAttribute('stroke-dashoffset', dashOffset);
-                el.style.filter = rGlow;
-            });
-
-            // Wheels
-            ['FL','FR'].forEach(id => updateWheel(id, fBar, fClamp, fTq, fCol, '#ff3333'));
-            ['RL','RR'].forEach(id => updateWheel(id, rBar, rClamp, rTq, rCol, '#ff8c00'));
-
-            // Lab readout
-            document.getElementById('frontLabOutput').textContent =
-                `• Line Pressure:   ${fBar.toFixed(2)} bar\n` +
-                `• Piston Area:     ${(Math.PI*Math.pow(num('frontPistonDia')/2000,2)*num('frontPistonCount')*1e4).toFixed(2)} cm²\n` +
-                `• Clamp Force:     ${fClamp.toFixed(0)} N\n` +
-                `• Brake Torque:    ${fTq.toFixed(1)} N·m`;
-            document.getElementById('rearLabOutput').textContent =
-                `• Line Pressure:   ${rBar.toFixed(2)} bar\n` +
-                `• Piston Area:     ${(Math.PI*Math.pow(num('rearPistonDia')/2000,2)*num('rearPistonCount')*1e4).toFixed(2)} cm²\n` +
-                `• Clamp Force:     ${rClamp.toFixed(0)} N\n` +
-                `• Brake Torque:    ${rTq.toFixed(1)} N·m`;
-        }
-
-        function updateWheel(id, lineBar, clampN, torqueNm, pipeColor, glowColor) {
-            const w = wheels[id];
-            const clearance = 7 * (1 - Math.min(1, frac * 1.05));
-            layoutWheelClamp(w, Math.max(0, clearance));
-
-            const heat = Math.min(1, lineBar / 50);
-            const padColor = frac > 0.05 ? lerp('#192438', pipeColor, heat * 0.85) : '#192438';
-            w.padL.setAttribute('fill', padColor);
-            w.padR.setAttribute('fill', padColor);
-
-            // Rotor heat: dark grey → bright orange-red
-            const rotorCol = lerp('#192438', '#ff5200', heat);
-            w.rotor.setAttribute('fill', rotorCol);
-            w.rotor.style.filter = heat > 0.06
-                ? `drop-shadow(0 0 ${Math.round(12*heat)}px rgba(255,80,0,${heat}))`
-                : 'none';
-
-            w.sub.textContent = `${clampN.toFixed(0)} N · ${torqueNm.toFixed(1)} N·m`;
-            w.sub.setAttribute('fill', heat > 0.08 ? glowColor : '#3a5070');
-        }
-
-        function loop() {
-            const target = braking ? 1 : 0;
-            frac += (target - frac) * 0.12;
-            if (Math.abs(target - frac) < 0.002) frac = target;
-            render();
-            requestAnimationFrame(loop);
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            recompute();
-            requestAnimationFrame(loop);
-        });
-    </script>
+    // Initialize initial charts
+    updateCharts();
+  </script>
 </body>
 </html>
