@@ -8,7 +8,6 @@
     :root {
       --bg: #0f172a;
       --card: #1e293b;
-      --card-hover: #334155;
       --accent: #38bdf8;
       --accent-glow: rgba(56, 189, 248, 0.2);
       --danger: #ef4444;
@@ -138,7 +137,6 @@
       color: var(--text);
     }
 
-    /* Hydraulic Diagram Visual Box */
     .diagram-container {
       background: var(--code-bg);
       border: 1px solid var(--border);
@@ -194,9 +192,9 @@
   <div class="container">
     <header>
       <span class="badge">SAE India / International Standards</span>
-      <h1>Baja ATV Hydraulic Braking Architecture</h1>
+      <h1>Baja ATV Direct Actuation Braking Architecture</h1>
       <p class="subtitle">
-        An engineering overview of tandem master cylinders, proportioning valve dynamics, thermal dissipation, and split circuit safety requirements for all-terrain racing vehicles.
+        An engineering overview of direct-actuation hydraulic circuits, line pressure generation, brake pad thermal dissipation, and wheel locking dynamics for all-terrain racing vehicles.
       </p>
       <div class="cta-container">
         <a href="brake-circuit.html" class="btn-primary">⚡ Launch Interactive Hardware Simulator</a>
@@ -207,51 +205,47 @@
     <div class="rules-banner">
       <h4>⚠️ Key Baja SAE Technical Regulations (Brake Check Mandate)</h4>
       <p style="margin: 0; color: var(--text-muted); font-size: 0.95rem;">
-        Per SAE Rules, the vehicle must be equipped with <strong>at least two independent hydraulic braking circuits</strong> operated by a single foot pedal. Under dynamic test conditions, the braking system must generate sufficient force to <strong>lock all four wheels simultaneously</strong> on loose dirt and asphalt surfaces.
+        Per SAE Rules, the vehicle must be equipped with <strong>independent hydraulic braking circuits</strong> operated by a single driver input control. Under dynamic test conditions, the braking system must generate sufficient force to <strong>lock all four wheels simultaneously</strong> on loose dirt and asphalt surfaces.
       </p>
     </div>
 
     <!-- Architecture Visual Diagram -->
     <h2>Hydraulic Circuit Schematic</h2>
     <div class="diagram-container">
-[Foot Pedal] (Ratio ~ 4.5:1 to 5.0:1)
+[Driver Input Lever / Pedal Assembly] (Leverage Ratio)
      │
-     ▼
-[Tandem Master Cylinder / Dual Pushrod]
-     ├─── (Front Circuit) ──────────────────────────► [Front Calipers] (Floating/Fixed 2-Piston)
-     │                                                     │
-     └─── (Rear Circuit) ──► [Proportioning Valve] ───────► [Rear Caliper] (Inboard Rotor/Axle)
-                                    │
-                                    └─► Knee Pressure Cutoff (Limits Rear Bias to Prevent Spin-Out)
+     ├─── (Front Circuit Line) ──────────────► [Front Calipers] (Floating/Fixed 2-Piston)
+     │
+     └─── (Rear Circuit Line) ───────────────► [Rear Caliper] (Inboard Rotor/Axle)
     </div>
 
     <!-- 3 Column Breakdown of System Components -->
     <h2>Core Hardware Components</h2>
     <div class="grid-3">
       <div class="card">
-        <h3>1. Pedal Assembly & Lever</h3>
+        <h3>1. Input Lever & Linkage</h3>
         <ul>
-          <li><strong>Lever Ratio:</strong> Typically between <code>4.0:1</code> and <code>5.5:1</code> to multiply driver foot input force without excessive pedal travel.</li>
-          <li><strong>Bias Bar:</strong> Connects pedal force to dual master cylinder pushrods, allowing mechanical front/rear force distribution adjustment.</li>
-          <li><strong>Ergonomics:</strong> Designed for high fatigue resistance under maximum emergency panic stops (~500 N force).</li>
+          <li><strong>Leverage Ratio:</strong> Multiplies mechanical input force directly into hydraulic line pressure without intermediate compliance.</li>
+          <li><strong>Mechanical Bias Link:</strong> Distributes input effort directly between front and rear hydraulic lines.</li>
+          <li><strong>Ergonomics:</strong> Rigorous structural design preventing mechanical deflection during emergency panic stops (~500 N force).</li>
         </ul>
       </div>
 
       <div class="card">
-        <h3>2. Tandem Master Cylinder</h3>
+        <h3>2. Direct Hydraulic Circuit</h3>
         <ul>
-          <li><strong>Split-Circuit Protection:</strong> Contains primary and secondary pistons in a single bore. If one circuit leaks, the other maintains stopping power.</li>
-          <li><strong>Bore Diameter:</strong> Typically <code>16 mm</code> to <code>22.2 mm</code>. Smaller bores increase hydraulic line pressure for a given pedal force.</li>
-          <li><strong>Fluid Reservoirs:</strong> Isolated reservoirs preventing complete fluid depletion in failure events.</li>
+          <li><strong>Split Lines:</strong> Isolated fluid channels ensuring that a leak in the front or rear line maintains residual braking power on the secondary circuit.</li>
+          <li><strong>Line Pressure:</strong> Directly proportional to driver effort and effective hydraulic surface area.</li>
+          <li><strong>Fluid Selection:</strong> High dry/wet boiling point fluids (DOT 4 / DOT 5.1) to prevent vapor lock.</li>
         </ul>
       </div>
 
       <div class="card">
-        <h3>3. Proportioning Valve & Calipers</h3>
+        <h3>3. Calipers & Rotors</h3>
         <ul>
-          <li><strong>Knee Point Pressure:</strong> Regulates pressure to rear brakes once threshold (e.g., 25 bar) is exceeded to prevent dynamic rear-wheel lockup.</li>
-          <li><strong>Calipers:</strong> Dual-piston front calipers vs. single/dual rear calipers matching dynamic load transfer (~70% Front / 30% Rear).</li>
-          <li><strong>Rotor Materials:</strong> Cast Iron, Stainless Steel (SS420), Carbon-Carbon, or Ceramic SiC discs engineered for thermal mass and weight reduction.</li>
+          <li><strong>Piston Sizing:</strong> Differential piston diameters across front and rear calipers establish the fixed hydraulic torque split.</li>
+          <li><strong>Pad Surface Area:</strong> Sized for uniform heat dissipation across brake pad friction surfaces.</li>
+          <li><strong>Disc Materials:</strong> Cast Iron, Stainless Steel (SS420), Carbon-Carbon, or Ceramic SiC options to balance mass and thermal storage.</li>
         </ul>
       </div>
     </div>
@@ -262,10 +256,10 @@
       <div class="card">
         <h3>Hydraulic Line Pressure</h3>
         <p style="color: var(--text-muted); font-size: 0.9rem;">
-          Calculates hydraulic pressure generated by driver foot effort $F_{\text{pedal}}$ through pedal ratio $R_{\text{pedal}}$ and master cylinder bore area $A_{\text{mc}}$:
+          Calculates hydraulic line pressure $P_{\text{line}}$ generated directly by driver input effort $F_{\text{input}}$ multiplied through leverage ratio $R_{\text{lever}}$ and effective hydraulic area $A_{\text{hyd}}$:
         </p>
         <div class="formula-box">
-          P_mc = (F_pedal * R_pedal) / A_mc
+          P_line = (F_input * R_lever) / A_hyd
         </div>
       </div>
 
@@ -282,7 +276,7 @@
       <div class="card">
         <h3>Dynamic Weight Transfer</h3>
         <p style="color: var(--text-muted); font-size: 0.9rem;">
-          Under deceleration $a$, vehicle weight shifts forward onto the front axle, necessitating higher front braking bias:
+          Under deceleration $a$, vehicle weight shifts forward onto the front axle, requiring greater front dynamic torque capacity:
         </p>
         <div class="formula-box">
           ΔW = (m * a * h_cg) / L_wheelbase
