@@ -1,104 +1,293 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brake Calculator</title>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <style>
-        /* Reuse same sidebar + styling from index.html */
-        :root { --bg: #06090f; --surface: #0d1525; --border: rgba(52,152,219,0.3); --text: #c8d6ef; --blue: #3ba7ff; }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: 'Barlow Condensed', sans-serif; background: var(--bg); color: var(--text); display:flex; min-height:100vh; }
-        .sidebar { width:260px; background:#0a101f; border-right:1px solid var(--border); padding:30px 20px; position:fixed; height:100vh; }
-        .nav-link { display:block; padding:14px 20px; color:var(--text); text-decoration:none; border-radius:6px; margin-bottom:8px; }
-        .nav-link:hover, .nav-link.active { background:rgba(59,167,255,0.15); color:#fff; }
-        .main-content { margin-left:260px; padding:40px; flex:1; }
-        input, button { padding:10px; margin:5px; border-radius:6px; }
-        button { background:#3ba7ff; color:#000; border:none; cursor:pointer; font-weight:bold; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brake Thermal Dynamics — Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root {
+    --bg: #f5f6f8; --surface: #ffffff; --border: #d9dee5;
+    --text: #1f2733; --muted: #5b6673;
+    --accent: #1f4e79; --accent-soft: #eef3f8;
+    --front: #b23a3a; --rear: #b0702a; --ok: #1e6b45;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+body {
+    font-family:'Inter','Segoe UI',Arial,sans-serif;
+    background:var(--bg); color:var(--text);
+    min-height:100vh; font-size:15px; line-height:1.6;
+}
+/* ---- hamburger + drawer ---- */
+.menu-btn {
+    position:fixed; top:18px; left:18px; z-index:1001;
+    width:44px; height:44px; border-radius:8px;
+    background:var(--surface); border:1px solid var(--border);
+    cursor:pointer; display:flex; flex-direction:column;
+    justify-content:center; align-items:center; gap:5px;
+}
+.menu-btn span { display:block; width:20px; height:2px; background:var(--text); border-radius:1px; transition:transform 0.25s, opacity 0.25s; }
+.menu-btn.open span:nth-child(1){ transform:translateY(7px) rotate(45deg); }
+.menu-btn.open span:nth-child(2){ opacity:0; }
+.menu-btn.open span:nth-child(3){ transform:translateY(-7px) rotate(-45deg); }
+.drawer {
+    position:fixed; top:0; left:0; height:100vh; width:270px; z-index:1000;
+    background:var(--surface); border-right:1px solid var(--border);
+    padding:80px 20px 24px; transform:translateX(-100%); transition:transform 0.28s ease;
+}
+.drawer.open { transform:translateX(0); box-shadow:0 0 30px rgba(0,0,0,0.12); }
+.drawer h2 { font-size:1.02em; font-weight:700; color:var(--accent); margin-bottom:2px; }
+.drawer .tagline { color:var(--muted); font-size:0.75em; margin-bottom:24px; }
+.nav-link {
+    display:block; padding:11px 14px; color:var(--text); text-decoration:none;
+    border-radius:6px; margin-bottom:4px; font-size:0.92em; font-weight:500;
+}
+.nav-link:hover { background:var(--accent-soft); }
+.nav-link.active { background:var(--accent); color:#fff; }
+.overlay { position:fixed; inset:0; background:rgba(20,26,34,0.35); opacity:0; pointer-events:none; transition:opacity 0.25s; z-index:999; }
+.overlay.show { opacity:1; pointer-events:auto; }
+/* ---- page ---- */
+.page { max-width:900px; margin:0 auto; padding:32px 28px 64px 84px; }
+h1 { font-size:1.9em; font-weight:700; margin-bottom:4px; }
+.subtitle { color:var(--muted); font-size:0.95em; margin-bottom:24px; }
+.panel { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:22px; margin-bottom:18px; }
+.panel-label { font-size:0.85em; font-weight:600; color:var(--accent); margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+.controls-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px 24px; }
+.controls-grid label { display:flex; flex-direction:column; gap:4px; font-size:0.82em; color:var(--muted); font-weight:500; }
+.controls-grid input {
+    background:#fff; color:var(--text); border:1px solid var(--border);
+    border-radius:6px; padding:8px 10px; text-align:right;
+    font-family:'IBM Plex Mono',monospace; font-size:1.02em;
+}
+.controls-grid input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
+.constants-note { grid-column:1 / -1; font-size:0.78em; color:var(--muted); border-top:1px dashed var(--border); padding-top:10px; margin-top:2px; }
+.constants-note code { font-family:'IBM Plex Mono',monospace; color:var(--text); }
+.btn-group { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+.action-btn { font-family:inherit; font-weight:600; font-size:0.9em; padding:10px 22px; border-radius:6px; cursor:pointer; border:1px solid transparent; }
+.btn-calc { background:var(--accent); color:#fff; }
+.btn-calc:hover { background:#173e61; }
+.btn-excel { background:#fff; border-color:var(--border); color:var(--accent); }
+.btn-excel:hover { background:var(--accent-soft); }
+.summary-strip {
+    font-family:'IBM Plex Mono',monospace; font-size:0.85em; color:var(--ok);
+    margin-bottom:16px; padding:10px 14px; background:#eef6f1;
+    border:1px solid #cfe4d8; border-radius:6px;
+}
+.results-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+.result-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:18px 20px; }
+.result-card.front { border-top:3px solid var(--front); }
+.result-card.rear { border-top:3px solid var(--rear); }
+.result-card h3 { font-size:0.88em; font-weight:600; margin-bottom:10px; }
+.result-card.front h3 { color:var(--front); }
+.result-card.rear h3 { color:var(--rear); }
+.result-card pre { font-family:'IBM Plex Mono',monospace; font-size:0.8em; line-height:1.9; white-space:pre-wrap; }
+.chart-wrapper { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:18px; margin-bottom:10px; }
+.chart-wrapper canvas { max-height:300px; }
+.hint { color:var(--muted); font-size:0.8em; }
+@media (max-width:720px){
+    .page { padding:80px 18px 48px; }
+    .controls-grid { grid-template-columns:1fr 1fr; }
+    .results-grid { grid-template-columns:1fr; }
+}
+</style>
 </head>
 <body>
-    <div class="sidebar">
-        <h2>Brake Lab</h2>
-        <a href="index.html" class="nav-link">🏠 Home & Formulae</a>
-        <a href="calculator.html" class="nav-link active">📊 Calculator</a>
-        <a href="simulation.html" class="nav-link">🏎️ Simulation</a>
-    </div>
+    <button class="menu-btn" id="menuBtn" aria-label="Open navigation menu" onclick="toggleMenu()">
+        <span></span><span></span><span></span>
+    </button>
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+    <nav class="drawer" id="drawer">
+        <h2>Brake Thermal Dynamics Lab</h2>
+        <div class="tagline">Revolt Racers — Baja</div>
+        <a href="index.html" class="nav-link">Home &amp; Formulae</a>
+        <a href="calculator.html" class="nav-link active">Calculator</a>
+        <a href="simulation.html" class="nav-link">Simulation</a>
+    </nav>
 
-    <div class="main-content">
+    <main class="page">
         <h1>Brake Performance Calculator</h1>
-        
-        <div style="background:#111d33;padding:20px;border-radius:8px;max-width:700px;">
-            <label>Vehicle Mass (kg): <input type="number" id="mass" value="245"></label><br>
-            <label>Initial Speed (km/h): <input type="number" id="speed" value="90"></label><br>
-            <label>Stop Time (s): <input type="number" id="time" value="3.5"></label><br>
-            <label>Front Bias (%): <input type="number" id="bias" value="75"></label><br>
-            <label>Rotational Factor k: <input type="number" id="k" value="1.15" step="0.05"></label><br><br>
-            <button onclick="calculate()">Calculate</button>
+        <div class="subtitle">Six essential inputs — results, temperature graph, and Excel export</div>
+
+        <div class="panel">
+            <div class="panel-label">Inputs</div>
+            <div class="controls-grid">
+                <label>Vehicle mass (kg)
+                    <input type="number" id="mass" value="245" oninput="calculate()"></label>
+                <label>Initial speed (km/h)
+                    <input type="number" id="speed" value="40" oninput="calculate()"></label>
+                <label>Tire friction μ
+                    <input type="number" id="mu" value="0.90" step="0.01" oninput="calculate()"></label>
+                <label>Front bias (%)
+                    <input type="number" id="bias" value="75" oninput="calculate()"></label>
+                <label>Rotor mass, rubbing surface (kg)
+                    <input type="number" id="rotorMass" value="0.242" step="0.001" oninput="calculate()"></label>
+                <label>Specific heat c<sub>p</sub> (J/kg·K)
+                    <input type="number" id="cp" value="500" oninput="calculate()"></label>
+                <div class="constants-note">
+                    Fixed constants: rotational factor <code>k = 1.15</code>,
+                    gravity <code>g = 9.80665 m/s²</code>,
+                    ambient <code>25 °C</code>, two discs per axle.
+                </div>
+            </div>
         </div>
 
-        <div id="results" style="margin-top:30px;"></div>
-        <canvas id="tempChart" style="max-height:300px;margin-top:30px;"></canvas>
-        <button onclick="downloadExcel()" style="margin-top:20px;">📥 Download Excel</button>
-    </div>
+        <div class="btn-group">
+            <button class="action-btn btn-calc" onclick="calculate()">Calculate</button>
+            <button class="action-btn btn-excel" onclick="downloadExcel()">Download Excel sheet</button>
+        </div>
 
-    <script>
-        let chart;
-        function calculate() {
-            const m = parseFloat(document.getElementById('mass').value);
-            const v_kmh = parseFloat(document.getElementById('speed').value);
-            const t = parseFloat(document.getElementById('time').value);
-            const bias = parseFloat(document.getElementById('bias').value)/100;
-            const k = parseFloat(document.getElementById('k').value);
+        <div id="summary" class="summary-strip"></div>
 
-            const v = v_kmh / 3.6;
-            const KE = 0.5 * m * v*v * k;
-            const E_front = KE * bias;
-            const E_rear = KE * (1-bias);
-            const P_front = E_front / t;
-            const deltaT_front = E_front / (1.0 * 460); // approx 1kg rotor, cp=460
+        <div class="results-grid">
+            <div class="result-card front">
+                <h3>Front braking system (per disc)</h3>
+                <pre id="frontResults"></pre>
+            </div>
+            <div class="result-card rear">
+                <h3>Rear braking system (per disc)</h3>
+                <pre id="rearResults"></pre>
+            </div>
+        </div>
 
-            document.getElementById('results').innerHTML = `
-                <h2>Results</h2>
-                <p><strong>Total KE:</strong> ${(KE/1000).toFixed(1)} kJ</p>
-                <p><strong>Front Energy:</strong> ${(E_front/1000).toFixed(1)} kJ | Rear: ${(E_rear/1000).toFixed(1)} kJ</p>
-                <p><strong>Front Power:</strong> ${P_front.toFixed(0)} W</p>
-                <p><strong>Est. Front Rotor ΔT:</strong> ${deltaT_front.toFixed(1)} °C</p>
-            `;
+        <div class="chart-wrapper">
+            <canvas id="tempChart"></canvas>
+        </div>
+        <div class="hint">Rotor-surface temperature rise over the traction-limited stop. The Excel export contains the inputs, results, and the plotted time series on a second worksheet.</div>
+    </main>
 
-            // Simple chart
-            if (chart) chart.destroy();
-            chart = new Chart(document.getElementById('tempChart'), {
-                type: 'line',
-                data: {
-                    labels: Array.from({length: 20}, (_,i) => (i* t/20).toFixed(1)+'s'),
-                    datasets: [{
-                        label: 'Front Rotor Temp (°C)',
-                        data: Array.from({length: 20}, (_,i) => deltaT_front * (i/19)),
-                        borderColor: '#ff3333'
-                    }]
-                }
-            });
+<script>
+/* ---- drawer ---- */
+function toggleMenu() {
+    document.getElementById('menuBtn').classList.toggle('open');
+    document.getElementById('drawer').classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('show');
+}
+
+/* ---- calculation ---- */
+const K = 1.15, G = 9.80665, T_AMB = 25;
+let chart = null;
+let R = null;
+
+function calculate() {
+    const M      = parseFloat(document.getElementById('mass').value)      || 0;
+    const v_kmh  = parseFloat(document.getElementById('speed').value)     || 0;
+    const mu     = parseFloat(document.getElementById('mu').value)        || 0;
+    const biasF  = (parseFloat(document.getElementById('bias').value)     || 0) / 100;
+    const mRotor = parseFloat(document.getElementById('rotorMass').value) || 1;
+    const cp     = parseFloat(document.getElementById('cp').value)        || 1;
+    const biasR  = 1 - biasF;
+
+    const v     = v_kmh / 3.6;
+    const KE    = 0.5 * M * v * v * K;
+    const decel = mu * G;
+    const tStop = decel > 0 ? v / decel : 0;
+    const dStop = decel > 0 ? (v * v) / (2 * decel) : 0;
+
+    function axle(bias) {
+        const eDisc = KE * bias / 2;
+        const pDisc = tStop > 0 ? eDisc / tStop : 0;
+        const dT    = eDisc / (mRotor * cp);
+        return { eAxle: KE * bias, eDisc, pDisc, dT, peakTemp: T_AMB + dT };
+    }
+    const F = axle(biasF), Rr = axle(biasR);
+    R = { M, v_kmh, v, mu, biasF, biasR, mRotor, cp, KE, decel, tStop, dStop, F, Rr };
+
+    document.getElementById('summary').innerText =
+        `Q = ${(KE/1000).toFixed(2)} kJ · a = ${decel.toFixed(2)} m/s² · t_stop = ${tStop.toFixed(2)} s · d_stop = ${dStop.toFixed(1)} m`;
+
+    const fmt = (a) =>
+`Energy per disc:   ${(a.eDisc/1000).toFixed(2)} kJ
+Power per disc:    ${a.pDisc.toFixed(0)} W
+Temperature rise:  +${a.dT.toFixed(1)} °C
+Peak rotor temp:   ${a.peakTemp.toFixed(1)} °C`;
+
+    document.getElementById('frontResults').innerText = fmt(F);
+    document.getElementById('rearResults').innerText  = fmt(Rr);
+
+    // ---- chart ----
+    const N = 40, labels = [], fD = [], rD = [], sD = [];
+    for (let i = 0; i <= N; i++) {
+        const t = tStop * i / N;
+        const vt = Math.max(0, v - decel * t);
+        const frac = v > 0 ? (v*v - vt*vt) / (v*v) : 0;
+        labels.push(t.toFixed(2));
+        fD.push(T_AMB + F.dT * frac);
+        rD.push(T_AMB + Rr.dT * frac);
+        sD.push(vt * 3.6);
+    }
+    if (chart) chart.destroy();
+    chart = new Chart(document.getElementById('tempChart'), {
+        type: 'line',
+        data: { labels, datasets: [
+            { label:'Front rotor (°C)', data:fD, borderColor:'#b23a3a', yAxisID:'y', pointRadius:0, borderWidth:2 },
+            { label:'Rear rotor (°C)',  data:rD, borderColor:'#b0702a', yAxisID:'y', pointRadius:0, borderWidth:2 },
+            { label:'Speed (km/h)',     data:sD, borderColor:'#1f4e79', borderDash:[5,4], yAxisID:'y1', pointRadius:0, borderWidth:2 }
+        ]},
+        options: {
+            animation:false, responsive:true,
+            plugins:{ legend:{ labels:{ color:'#1f2733', font:{ family:'Inter', size:12 } } } },
+            scales:{
+                x:{ title:{ display:true, text:'Time (s)', color:'#5b6673' }, grid:{ color:'#e6e9ee' },
+                    ticks:{ color:'#5b6673', font:{ family:'IBM Plex Mono', size:11 }, maxTicksLimit:10 } },
+                y:{ title:{ display:true, text:'Temperature (°C)', color:'#5b6673' }, position:'left',
+                    grid:{ color:'#e6e9ee' }, ticks:{ color:'#5b6673', font:{ family:'IBM Plex Mono', size:11 } } },
+                y1:{ title:{ display:true, text:'Speed (km/h)', color:'#5b6673' }, position:'right', min:0,
+                    grid:{ drawOnChartArea:false }, ticks:{ color:'#5b6673', font:{ family:'IBM Plex Mono', size:11 } } }
+            }
         }
+    });
+}
 
-        function downloadExcel() {
-            const wb = XLSX.utils.book_new();
-            const ws_data = [
-                ["Parameter", "Value"],
-                ["Vehicle Mass (kg)", document.getElementById('mass').value],
-                ["Initial Speed (km/h)", document.getElementById('speed').value],
-                // ... add more rows
-            ];
-            const ws = XLSX.utils.aoa_to_sheet(ws_data);
-            XLSX.utils.book_append_sheet(wb, ws, "Brake Calc");
-            XLSX.writeFile(wb, "brake_calculations.xlsx");
-        }
+function downloadExcel() {
+    if (!R) calculate();
+    const r = R;
+    const rows = [
+        ["BAJA Brake Performance — Verification Sheet"],
+        [],
+        ["Input Parameter", "Value", "Unit"],
+        ["Vehicle Mass (M)", r.M, "kg"],
+        ["Initial Speed", r.v_kmh, "km/h"],
+        ["Tire Friction (μ)", r.mu, "-"],
+        ["Front Bias", r.biasF * 100, "%"],
+        ["Rotor Mass (rubbing surface)", r.mRotor, "kg"],
+        ["Specific Heat (c_p)", r.cp, "J/kg·K"],
+        ["Rotational Factor (k, fixed)", 1.15, "-"],
+        [],
+        ["Result", "Value", "Unit"],
+        ["Total Kinetic Energy (Q)", r.KE, "J"],
+        ["Deceleration (a = μg)", r.decel, "m/s²"],
+        ["Stopping Time", r.tStop, "s"],
+        ["Stopping Distance", r.dStop, "m"],
+        [],
+        ["Per Disc", "Front", "Rear"],
+        ["Energy (J)", r.F.eDisc, r.Rr.eDisc],
+        ["Power (W)", r.F.pDisc, r.Rr.pDisc],
+        ["Temperature Rise (°C)", r.F.dT, r.Rr.dT],
+        ["Peak Rotor Temperature (°C)", r.F.peakTemp, r.Rr.peakTemp]
+    ];
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch:34 }, { wch:16 }, { wch:14 }];
+    XLSX.utils.book_append_sheet(wb, ws, "Brake Calc");
 
-        // Auto calculate on load
-        window.onload = calculate;
-    </script>
+    if (chart) {
+        const ts = [["Time (s)", "Front Rotor (°C)", "Rear Rotor (°C)", "Speed (km/h)"]];
+        chart.data.labels.forEach((t, i) => ts.push([
+            parseFloat(t),
+            chart.data.datasets[0].data[i],
+            chart.data.datasets[1].data[i],
+            chart.data.datasets[2].data[i]
+        ]));
+        const ws2 = XLSX.utils.aoa_to_sheet(ts);
+        ws2['!cols'] = [{ wch:10 }, { wch:18 }, { wch:18 }, { wch:14 }];
+        XLSX.utils.book_append_sheet(wb, ws2, "Graph Data");
+    }
+    XLSX.writeFile(wb, "brake_calculations.xlsx");
+}
+
+window.onload = calculate;
+</script>
 </body>
 </html>
