@@ -1,74 +1,398 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brake Thermal Dynamics - Home</title>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #06090f; --surface: #0d1525; --border: rgba(52,152,219,0.3);
-            --text: #c8d6ef; --blue: #3ba7ff; --red: #ff3333;
-        }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body {
-            font-family: 'Barlow Condensed', sans-serif;
-            background: var(--bg); color: var(--text);
-            display: flex; min-height: 100vh;
-        }
-        .sidebar {
-            width: 260px; background: #0a101f; border-right: 1px solid var(--border);
-            padding: 30px 20px; position: fixed; height: 100vh;
-        }
-        .sidebar h2 { color: #fff; margin-bottom: 30px; text-align:center; }
-        .nav-link {
-            display: block; padding: 14px 20px; color: var(--text);
-            text-decoration: none; border-radius: 6px; margin-bottom: 8px;
-            transition: all 0.2s;
-        }
-        .nav-link:hover, .nav-link.active {
-            background: rgba(59,167,255,0.15); color: #fff;
-        }
-        .main-content {
-            margin-left: 260px; padding: 40px; flex: 1; max-width: 1000px;
-        }
-        h1 { font-size: 2.8em; margin-bottom: 20px; color: #fff; }
-        .formula { background: #111d33; padding: 20px; border-radius: 8px; margin: 20px 0; font-family: 'Share Tech Mono', monospace; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brake Thermal Dynamics — Home</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg: #f5f6f8; --surface: #ffffff; --border: #d9dee5;
+    --text: #1f2733; --muted: #5b6673;
+    --accent: #1f4e79; --accent-soft: #eef3f8; --code-bg: #f0f2f5;
+    --steel: #8a94a1; --steel-dark: #4d5763; --rotor: #6b7480;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+    font-family:'Inter','Segoe UI',Arial,sans-serif;
+    background:var(--bg); color:var(--text);
+    min-height:100vh; font-size:15px; line-height:1.6;
+}
+/* ============ Hamburger + drawer navigation ============ */
+.menu-btn {
+    position:fixed; top:18px; left:18px; z-index:1001;
+    width:44px; height:44px; border-radius:8px;
+    background:var(--surface); border:1px solid var(--border);
+    cursor:pointer; display:flex; flex-direction:column;
+    justify-content:center; align-items:center; gap:5px;
+}
+.menu-btn span { display:block; width:20px; height:2px; background:var(--text); border-radius:1px; transition:transform 0.25s, opacity 0.25s; }
+.menu-btn.open span:nth-child(1){ transform:translateY(7px) rotate(45deg); }
+.menu-btn.open span:nth-child(2){ opacity:0; }
+.menu-btn.open span:nth-child(3){ transform:translateY(-7px) rotate(-45deg); }
+.drawer {
+    position:fixed; top:0; left:0; height:100vh; width:270px; z-index:1000;
+    background:var(--surface); border-right:1px solid var(--border);
+    padding:80px 20px 24px; transform:translateX(-100%);
+    transition:transform 0.28s ease;
+}
+.drawer.open { transform:translateX(0); box-shadow:0 0 30px rgba(0,0,0,0.12); }
+.drawer h2 { font-size:1.02em; font-weight:700; color:var(--accent); margin-bottom:2px; }
+.drawer .tagline { color:var(--muted); font-size:0.75em; margin-bottom:24px; }
+.nav-link {
+    display:block; padding:11px 14px; color:var(--text); text-decoration:none;
+    border-radius:6px; margin-bottom:4px; font-size:0.92em; font-weight:500;
+}
+.nav-link:hover { background:var(--accent-soft); }
+.nav-link.active { background:var(--accent); color:#fff; }
+.overlay {
+    position:fixed; inset:0; background:rgba(20,26,34,0.35);
+    opacity:0; pointer-events:none; transition:opacity 0.25s; z-index:999;
+}
+.overlay.show { opacity:1; pointer-events:auto; }
+/* ============ Page ============ */
+.page { max-width:920px; margin:0 auto; padding:32px 28px 64px 84px; }
+h1 { font-size:1.9em; font-weight:700; margin-bottom:4px; }
+.subtitle { color:var(--muted); font-size:0.95em; margin-bottom:24px; }
+h2 {
+    font-size:1.05em; font-weight:600; color:var(--accent);
+    border-bottom:1px solid var(--border); padding-bottom:8px; margin:36px 0 16px;
+}
+.intro { margin-bottom:24px; max-width:720px; }
+/* ============ Interactive vehicle viewer ============ */
+.viewer-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    padding:16px; margin-bottom:8px; overflow:hidden; position:relative;
+}
+.viewer-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.viewer-title { font-size:0.85em; font-weight:600; color:var(--accent); }
+.viewer-btn {
+    font-family:inherit; font-size:0.82em; font-weight:600; padding:7px 16px;
+    border-radius:6px; border:1px solid var(--border); background:#fff;
+    color:var(--accent); cursor:pointer;
+}
+.viewer-btn:hover { background:var(--accent-soft); }
+.viewer-btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+.stage-clip { overflow:hidden; border-radius:6px; background:#fbfcfd; border:1px solid var(--border); }
+.zoom-stage {
+    transition:transform 0.9s cubic-bezier(0.4, 0.0, 0.2, 1);
+    transform-origin:172px 268px;  /* front wheel centre in SVG units (1px = 1 unit here) */
+    will-change:transform;
+}
+.zoom-stage.zoomed { transform:scale(3.4); }
+#brakeDetail { opacity:0; transition:opacity 0.5s 0.45s; }
+.zoomed #brakeDetail { opacity:1; }
+#carBody { transition:opacity 0.4s; }
+.zoomed #carBody .fadeOnZoom { opacity:0.15; transition:opacity 0.6s; }
+.wheel-hotspot { cursor:pointer; }
+.wheel-hotspot:hover .hotspot-ring { stroke-opacity:0.9; }
+.hotspot-ring { transition:stroke-opacity 0.2s; }
+.zoomed .hotspot-ring, .zoomed .hotspot-label { opacity:0; transition:opacity 0.3s; }
+.viewer-caption { color:var(--muted); font-size:0.8em; margin-top:10px; }
+/* ============ Formulae / table ============ */
+.formula-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; padding:18px 20px; margin-bottom:12px;
+}
+.formula-card h3 { font-size:0.95em; font-weight:600; margin-bottom:8px; }
+.formula-card .eq {
+    font-family:'IBM Plex Mono',monospace; font-size:0.86em;
+    background:var(--code-bg); border:1px solid var(--border);
+    padding:10px 14px; border-radius:6px; margin:8px 0;
+    display:block; overflow-x:auto; white-space:pre;
+}
+.formula-card p { color:var(--muted); font-size:0.9em; }
+.math-var { color:var(--accent); font-weight:600; }
+table {
+    width:100%; border-collapse:collapse; margin:10px 0 24px;
+    background:var(--surface); border:1px solid var(--border); font-size:0.88em;
+}
+th { text-align:left; font-weight:600; background:var(--accent-soft); border-bottom:1px solid var(--border); padding:10px 14px; }
+td { padding:9px 14px; border-bottom:1px solid var(--border); }
+tr:last-child td { border-bottom:none; }
+td:nth-child(2){ font-family:'IBM Plex Mono',monospace; font-size:0.95em; }
+td:last-child { color:var(--muted); }
+@media (max-width:720px){ .page { padding:80px 18px 48px; } }
+</style>
 </head>
 <body>
-    <div class="sidebar">
-        <h2>Brake Lab</h2>
-        <a href="index.html" class="nav-link active">🏠 Home & Formulae</a>
-        <a href="calculator.html" class="nav-link">📊 Calculator</a>
-        <a href="simulation.html" class="nav-link">🏎️ Simulation</a>
-    </div>
+    <!-- Hamburger navigation -->
+    <button class="menu-btn" id="menuBtn" aria-label="Open navigation menu" onclick="toggleMenu()">
+        <span></span><span></span><span></span>
+    </button>
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+    <nav class="drawer" id="drawer">
+        <h2>Brake Thermal Dynamics Lab</h2>
+        <div class="tagline">Revolt Racers — Baja</div>
+        <a href="index.html" class="nav-link active">Home &amp; Formulae</a>
+        <a href="calculator.html" class="nav-link">Calculator</a>
+        <a href="simulation.html" class="nav-link">Simulation</a>
+    </nav>
 
-    <div class="main-content">
+    <main class="page">
         <h1>Brake Thermal Dynamics Simulator</h1>
-        <p>This tool helps Baja / Formula Student teams understand braking energy, heat generation, and rotor temperatures.</p>
+        <div class="subtitle">Braking energy, heat flux, and rotor temperature verification for Baja / Formula Student vehicles</div>
 
+        <p class="intro">
+            Every stop converts the vehicle's kinetic energy into heat at the pad–rotor interface.
+            This tool quantifies that conversion. Select the front wheel on the vehicle below to
+            inspect the brake assembly, then use the <strong>Calculator</strong> for numeric results
+            and Excel export, or the <strong>Simulation</strong> for the live thermal and hydraulic model.
+        </p>
+
+        <!-- ================= Interactive vehicle ================= -->
+        <div class="viewer-card">
+            <div class="viewer-head">
+                <div class="viewer-title" id="viewerTitle">Vehicle overview — Baja buggy, side elevation</div>
+                <button class="viewer-btn" id="zoomToggle" onclick="toggleZoom()">Zoom to brake system</button>
+            </div>
+            <div class="stage-clip">
+                <div class="zoom-stage" id="zoomStage">
+                <svg viewBox="0 0 900 380" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Inter, Arial, sans-serif">
+                    <defs>
+                        <marker id="arr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+                            <path d="M0,0 L7,3.5 L0,7 z" fill="#5b6673"/>
+                        </marker>
+                    </defs>
+
+                    <!-- ground line -->
+                    <line x1="30" y1="330" x2="870" y2="330" stroke="#c3c9d1" stroke-width="2"/>
+                    <line x1="30" y1="336" x2="870" y2="336" stroke="#e3e6ea" stroke-width="1"/>
+
+                    <g id="carBody">
+                        <!-- ============ tube-frame chassis (line-art) ============ -->
+                        <g class="fadeOnZoom" stroke="#4d5763" stroke-width="5" stroke-linecap="round" fill="none">
+                            <!-- lower frame rail -->
+                            <path d="M150 290 L 250 292 L 560 292 L 660 288"/>
+                            <!-- front nose -->
+                            <path d="M150 290 L 120 265 L 128 235 L 190 205"/>
+                            <!-- firewall / dash hoop -->
+                            <path d="M300 292 L 296 190"/>
+                            <!-- main roll hoop -->
+                            <path d="M520 292 L 512 148"/>
+                            <!-- roof line -->
+                            <path d="M296 190 L 340 152 L 512 148"/>
+                            <!-- rear brace to engine bay -->
+                            <path d="M512 148 L 620 250 L 660 288"/>
+                            <!-- rear bumper frame -->
+                            <path d="M660 288 L 700 280 L 706 300 L 664 306"/>
+                            <!-- nose brace -->
+                            <path d="M190 205 L 296 190"/>
+                            <path d="M128 235 L 250 292"/>
+                            <!-- seat / floor cross -->
+                            <path d="M340 152 L 380 292" stroke-width="3.5"/>
+                            <path d="M430 292 L 512 148" stroke-width="3.5"/>
+                        </g>
+                        <!-- engine block hint -->
+                        <g class="fadeOnZoom">
+                            <rect x="565" y="230" width="70" height="55" rx="4" fill="#e6e9ee" stroke="#8a94a1" stroke-width="2"/>
+                            <line x1="575" y1="245" x2="625" y2="245" stroke="#8a94a1" stroke-width="1.5"/>
+                            <line x1="575" y1="258" x2="625" y2="258" stroke="#8a94a1" stroke-width="1.5"/>
+                            <line x1="575" y1="271" x2="625" y2="271" stroke="#8a94a1" stroke-width="1.5"/>
+                        </g>
+                        <!-- rear suspension arm -->
+                        <g class="fadeOnZoom" stroke="#6b7480" stroke-width="4" fill="none">
+                            <path d="M560 292 L 640 300 L 690 268"/>
+                        </g>
+                        <!-- front suspension arms to front wheel -->
+                        <g class="fadeOnZoom" stroke="#6b7480" stroke-width="4" fill="none">
+                            <path d="M250 292 L 190 275 L 172 268"/>
+                            <path d="M150 290 L 172 268"/>
+                            <!-- coilover -->
+                            <path d="M190 205 L 176 252" stroke-width="3"/>
+                            <path d="M181 214 l 8 3 M179 222 l 8 3 M177 230 l 8 3 M175 238 l 8 3" stroke-width="2"/>
+                        </g>
+
+                        <!-- ============ REAR wheel (simple) ============ -->
+                        <g class="fadeOnZoom">
+                            <circle cx="690" cy="268" r="62" fill="#f0f2f5" stroke="#4d5763" stroke-width="6"/>
+                            <circle cx="690" cy="268" r="40" fill="none" stroke="#8a94a1" stroke-width="2"/>
+                            <circle cx="690" cy="268" r="8" fill="#8a94a1"/>
+                            <g stroke="#8a94a1" stroke-width="3">
+                                <line x1="690" y1="236" x2="690" y2="300"/>
+                                <line x1="658" y1="268" x2="722" y2="268"/>
+                                <line x1="667" y1="245" x2="713" y2="291"/>
+                                <line x1="713" y1="245" x2="667" y2="291"/>
+                            </g>
+                        </g>
+
+                        <!-- ============ FRONT wheel (zoom target, centre 172,268) ============ -->
+                        <g id="frontWheel" class="wheel-hotspot" onclick="toggleZoom()">
+                            <!-- tire -->
+                            <circle cx="172" cy="268" r="62" fill="#f0f2f5" stroke="#4d5763" stroke-width="6"/>
+                            <!-- rim -->
+                            <circle cx="172" cy="268" r="42" fill="#fbfcfd" stroke="#8a94a1" stroke-width="2.5"/>
+
+                            <!-- ==== Brake assembly detail (revealed on zoom) ==== -->
+                            <g id="brakeDetail">
+                                <!-- brake rotor -->
+                                <circle cx="172" cy="268" r="34" fill="#dfe3e8" stroke="#4d5763" stroke-width="1.6"/>
+                                <!-- rubbing surface ring -->
+                                <circle cx="172" cy="268" r="30" fill="none" stroke="#9aa3ae" stroke-width="0.8"/>
+                                <circle cx="172" cy="268" r="18" fill="none" stroke="#9aa3ae" stroke-width="0.8"/>
+                                <!-- cross-drilled vent holes on the rubbing ring -->
+                                <g fill="#f5f6f8" stroke="#8a94a1" stroke-width="0.5">
+                                    <circle cx="172" cy="244" r="1.7"/><circle cx="184" cy="247.2" r="1.7"/>
+                                    <circle cx="192.8" cy="256" r="1.7"/><circle cx="196" cy="268" r="1.7"/>
+                                    <circle cx="192.8" cy="280" r="1.7"/><circle cx="184" cy="288.8" r="1.7"/>
+                                    <circle cx="172" cy="292" r="1.7"/><circle cx="160" cy="288.8" r="1.7"/>
+                                    <circle cx="151.2" cy="280" r="1.7"/><circle cx="148" cy="268" r="1.7"/>
+                                    <circle cx="151.2" cy="256" r="1.7"/><circle cx="160" cy="247.2" r="1.7"/>
+                                </g>
+                                <!-- hat / hub -->
+                                <circle cx="172" cy="268" r="12" fill="#c9ced6" stroke="#4d5763" stroke-width="1.2"/>
+                                <circle cx="172" cy="268" r="4" fill="#8a94a1" stroke="#4d5763" stroke-width="0.8"/>
+                                <!-- wheel studs -->
+                                <g fill="#6b7480">
+                                    <circle cx="172" cy="260.5" r="1.4"/><circle cx="179" cy="264" r="1.4"/>
+                                    <circle cx="177" cy="273.5" r="1.4"/><circle cx="167" cy="273.5" r="1.4"/>
+                                    <circle cx="165" cy="264" r="1.4"/>
+                                </g>
+                                <!-- caliper straddling the rotor (upper-right) -->
+                                <g>
+                                    <path d="M191 240 A 36 36 0 0 1 206 262 L 197 265 A 27 27 0 0 0 185.5 248 Z"
+                                          fill="#1f4e79" stroke="#173e61" stroke-width="1"/>
+                                    <!-- caliper bridge bolts -->
+                                    <circle cx="196.5" cy="247" r="1.3" fill="#eef3f8"/>
+                                    <circle cx="201.5" cy="257" r="1.3" fill="#eef3f8"/>
+                                    <!-- brake pads (inner edge of caliper) -->
+                                    <path d="M186.5 249 A 26 26 0 0 1 196 262.5 L 193 263.6 A 23 23 0 0 0 184.5 251.5 Z"
+                                          fill="#b23a3a" stroke="#8f2e2e" stroke-width="0.6"/>
+                                    <!-- banjo fitting + flexible brake line -->
+                                    <circle cx="204" cy="252" r="2" fill="#4d5763"/>
+                                    <path d="M204 252 C 214 240, 220 228, 218 212" fill="none" stroke="#4d5763" stroke-width="1.6"/>
+                                </g>
+                                <!-- component labels (small; readable at 3.4x zoom) -->
+                                <g font-size="4.6" fill="#1f2733">
+                                    <line x1="150" y1="243" x2="136" y2="234" stroke="#5b6673" stroke-width="0.5" marker-end="url(#arr)" transform="rotate(180 143 238.5)"/>
+                                    <text x="118" y="232">Brake rotor</text>
+                                    <text x="118" y="238" fill="#5b6673" font-size="3.8">cross-drilled, Ø not to scale</text>
+
+                                    <text x="207" y="243">Caliper</text>
+                                    <text x="207" y="248.6" fill="#5b6673" font-size="3.8">single-piston, floating</text>
+
+                                    <text x="199" y="271">Pads</text>
+
+                                    <text x="150" y="296.5">Hat / hub flange</text>
+                                    <line x1="164" y1="291" x2="168" y2="279" stroke="#5b6673" stroke-width="0.5"/>
+
+                                    <text x="212" y="212">Brake line</text>
+                                    <text x="212" y="217.6" fill="#5b6673" font-size="3.8">to master cylinder</text>
+
+                                    <text x="130" y="255" fill="#5b6673" font-size="3.8">rubbing</text>
+                                    <text x="130" y="260" fill="#5b6673" font-size="3.8">surface</text>
+                                    <line x1="143" y1="257" x2="150" y2="260" stroke="#5b6673" stroke-width="0.5"/>
+                                </g>
+                            </g>
+
+                            <!-- hotspot indicator (visible when not zoomed) -->
+                            <circle class="hotspot-ring" cx="172" cy="268" r="68" fill="none"
+                                    stroke="#1f4e79" stroke-width="2" stroke-dasharray="6 5" stroke-opacity="0.55"/>
+                            <g class="hotspot-label">
+                                <rect x="118" y="342" width="108" height="20" rx="4" fill="#1f4e79"/>
+                                <text x="172" y="356" text-anchor="middle" font-size="11" fill="#fff" font-weight="600">Inspect brake system</text>
+                            </g>
+                        </g>
+
+                        <!-- overall dimension line -->
+                        <g class="fadeOnZoom" stroke="#5b6673" stroke-width="1" fill="#5b6673" font-size="12">
+                            <line x1="110" y1="358" x2="752" y2="358" marker-end="url(#arr)" marker-start="url(#arr)"/>
+                            <text x="410" y="374" font-family="IBM Plex Mono, monospace">wheelbase ≈ 1.55 m</text>
+                        </g>
+                    </g>
+                </svg>
+                </div>
+            </div>
+            <div class="viewer-caption" id="viewerCaption">
+                Click the highlighted front wheel, or use the button above, to zoom into the disc-brake assembly.
+            </div>
+        </div>
+
+        <!-- ================= Formulae ================= -->
         <h2>Key Formulae</h2>
-        <div class="formula">
-            <strong>Kinetic Energy:</strong><br>
-            E = ½ × m × v² × k (k = rotational factor ≈ 1.15)<br><br>
-            <strong>Energy per brake (Front/Rear):</strong><br>
-            E_front = E × bias (typically 0.75 front)<br><br>
-            <strong>Power:</strong><br>
-            P = E / t (Watts)<br><br>
-            <strong>Heat Flux:</strong><br>
-            q = P / A_rubbing<br><br>
-            <strong>Temperature Rise:</strong><br>
-            ΔT = E / (m_rotor × c_p)
+
+        <div class="formula-card">
+            <h3>1. Kinetic Energy and Rotational Overhead</h3>
+            <span class="eq">E = ½ × M × v² × k</span>
+            <p>The rotational correction factor <span class="math-var">k</span> ≈ 1.15 scales the total
+            system energy to include spinning wheels, hubs, and rotors that must also be brought to rest.</p>
+        </div>
+
+        <div class="formula-card">
+            <h3>2. Energy Split per Axle and per Disc</h3>
+            <span class="eq">E_front = E × bias        (typically 0.75 front / 0.25 rear)
+E_disc  = E_axle ÷ 2</span>
+            <p>Weight transfer under braking loads the front axle harder, so the hydraulic system is
+            biased approximately 75 % front; each axle's share divides between its two discs.</p>
+        </div>
+
+        <div class="formula-card">
+            <h3>3. Deceleration and Stopping Time (Traction Limit)</h3>
+            <span class="eq">a = μ × g        t_stop = v ÷ a        (g = 9.80665 m/s²)</span>
+            <p>Maximum deceleration is capped by the tire–road friction coefficient
+            <span class="math-var">μ</span> — brakes stronger than the tires simply lock the wheels.</p>
+        </div>
+
+        <div class="formula-card">
+            <h3>4. Braking Power and Heat Flux</h3>
+            <span class="eq">P = E ÷ t        q = P ÷ A_rubbing</span>
+            <p>The rate at which each disc absorbs energy, and its concentration over the pad-swept
+            area — the quantity that drives surface hot-spots and pad fade.</p>
+        </div>
+
+        <div class="formula-card">
+            <h3>5. Temperature Rise — Soak vs. Peak</h3>
+            <span class="eq">ΔT = E ÷ (m × c_p)
+ΔT_soak → full rotor mass    ·    ΔT_peak → action-surface mass only</span>
+            <p>Heat does not spread instantly through the rotor: the bulk (soak) model gives the
+            settled temperature, while the action-surface model reveals the instantaneous surface
+            spike that governs fade and thermal fatigue.</p>
         </div>
 
         <h2>Typical Values (Baja Buggy)</h2>
-        <ul>
-            <li>Vehicle Mass: 245 kg</li>
-            <li>Initial Speed: 80–100 km/h</li>
-            <li>Rotor Mass (rubbing surface): ~0.8–1.2 kg each</li>
-            <li>Specific Heat (Cast Iron): 460 J/kg·K</li>
-        </ul>
-    </div>
+        <table>
+            <thead><tr><th>Parameter</th><th>Value</th><th>Notes</th></tr></thead>
+            <tbody>
+                <tr><td>Vehicle mass</td><td>245 kg</td><td>Lightweight buggy, driver included</td></tr>
+                <tr><td>Initial speed</td><td>40 km/h (≈ 11.11 m/s)</td><td>Typical brake-test entry speed</td></tr>
+                <tr><td>Rotational factor k</td><td>1.15</td><td>Wheels, hubs, rotors overhead</td></tr>
+                <tr><td>Brake bias</td><td>75 % front / 25 % rear</td><td>Weight-transfer realistic split</td></tr>
+                <tr><td>Rotor mass (rubbing surface)</td><td>≈ 0.24 kg each</td><td>Pad-swept ring only</td></tr>
+                <tr><td>Specific heat (steel / cast iron)</td><td>460 – 500 J/kg·K</td><td>Rotor material c_p</td></tr>
+                <tr><td>Tire friction μ</td><td>≈ 0.90</td><td>Dry surface adhesion limit</td></tr>
+            </tbody>
+        </table>
+    </main>
+
+<script>
+/* ---- drawer navigation ---- */
+function toggleMenu() {
+    document.getElementById('menuBtn').classList.toggle('open');
+    document.getElementById('drawer').classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('show');
+}
+
+/* ---- zoom interaction ---- */
+let zoomed = false;
+function toggleZoom() {
+    zoomed = !zoomed;
+    document.getElementById('zoomStage').classList.toggle('zoomed', zoomed);
+    const btn = document.getElementById('zoomToggle');
+    const title = document.getElementById('viewerTitle');
+    const cap = document.getElementById('viewerCaption');
+    if (zoomed) {
+        btn.textContent = 'Back to vehicle';
+        btn.classList.add('primary');
+        title.textContent = 'Front brake assembly — rotor, caliper, pads, hub';
+        cap.textContent = 'Cross-drilled rotor with the pad-swept rubbing surface, a floating single-piston caliper, and the flexible line running to the master cylinder. The rubbing-ring mass is the "action surface mass" used in the peak-temperature model.';
+    } else {
+        btn.textContent = 'Zoom to brake system';
+        btn.classList.remove('primary');
+        title.textContent = 'Vehicle overview — Baja buggy, side elevation';
+        cap.textContent = 'Click the highlighted front wheel, or use the button above, to zoom into the disc-brake assembly.';
+    }
+}
+</script>
 </body>
 </html>
