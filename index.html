@@ -90,12 +90,25 @@ h2 {
 .hotspot-ring { transition:stroke-opacity 0.2s; }
 .zoomed .hotspot-ring, .zoomed .hotspot-label { opacity:0; transition:opacity 0.3s; }
 .viewer-caption { color:var(--muted); font-size:0.8em; margin-top:10px; }
-/* ============ Formulae / table ============ */
+/* ============ Formulae grid (expandable cards) ============ */
+.formula-grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:12px;
+}
 .formula-card {
     background:var(--surface); border:1px solid var(--border);
-    border-radius:8px; padding:18px 20px; margin-bottom:12px;
+    border-radius:8px; padding:18px 20px; cursor:pointer;
+    transition:border-color 0.2s, box-shadow 0.2s;
 }
+.formula-card:hover { border-color:var(--accent); }
+.formula-card.expanded { box-shadow:0 4px 16px rgba(31,78,121,0.1); }
+.formula-card-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
 .formula-card h3 { font-size:0.95em; font-weight:600; margin-bottom:8px; }
+.formula-chevron {
+    flex:0 0 auto; width:20px; height:20px; border-radius:5px;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--accent); transition:transform 0.3s ease; margin-top:1px;
+}
+.formula-card.expanded .formula-chevron { transform:rotate(180deg); }
 .formula-card .eq {
     font-family:'IBM Plex Mono',monospace; font-size:0.86em;
     background:var(--code-bg); border:1px solid var(--border);
@@ -103,7 +116,21 @@ h2 {
     display:block; overflow-x:auto; white-space:pre;
 }
 .formula-card p { color:var(--muted); font-size:0.9em; }
+.formula-card .summary { margin-bottom:0; }
+.formula-details {
+    max-height:0; opacity:0; overflow:hidden;
+    transition:max-height 0.4s ease, opacity 0.3s ease, margin-top 0.4s ease;
+}
+.formula-card.expanded .formula-details { max-height:900px; opacity:1; margin-top:12px; }
+.formula-details-inner { border-top:1px solid var(--border); padding-top:12px; }
+.formula-details h4 { font-size:0.8em; font-weight:600; color:var(--accent); margin:12px 0 4px; text-transform:uppercase; letter-spacing:0.03em; }
+.formula-details h4:first-child { margin-top:0; }
+.formula-details ul { margin:4px 0 0 18px; color:var(--muted); font-size:0.9em; }
+.formula-details li { margin-bottom:4px; }
+.formula-details p { margin-bottom:0; }
 .math-var { color:var(--accent); font-weight:600; }
+.expand-hint { color:var(--muted); font-size:0.78em; margin:-8px 0 14px; }
+@media (max-width:720px){ .formula-grid { grid-template-columns:1fr; } }
 table {
     width:100%; border-collapse:collapse; margin:10px 0 24px;
     background:var(--surface); border:1px solid var(--border); font-size:0.88em;
@@ -311,43 +338,171 @@ td:last-child { color:var(--muted); }
 
         <!-- ================= Formulae ================= -->
         <h2>Key Formulae</h2>
+        <div class="expand-hint">Click a card to expand it for the full derivation, variable definitions, and practical notes.</div>
 
-        <div class="formula-card">
-            <h3>1. Kinetic Energy and Rotational Overhead</h3>
-            <span class="eq">E = ½ × M × v² × k</span>
-            <p>The rotational correction factor <span class="math-var">k</span> ≈ 1.15 scales the total
-            system energy to include spinning wheels, hubs, and rotors that must also be brought to rest.</p>
-        </div>
+        <div class="formula-grid" id="formulaGrid">
 
-        <div class="formula-card">
-            <h3>2. Energy Split per Axle and per Disc</h3>
-            <span class="eq">E_front = E × bias        (typically 0.75 front / 0.25 rear)
+            <div class="formula-card" tabindex="0" role="button" aria-expanded="false" onclick="toggleFormula(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleFormula(this);}">
+                <div class="formula-card-head">
+                    <h3>1. Kinetic Energy and Rotational Overhead</h3>
+                    <svg class="formula-chevron" viewBox="0 0 20 20" fill="none"><path d="M5 7.5 L10 12.5 L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span class="eq">E = ½ × M × v² × k</span>
+                <p class="summary">The rotational correction factor <span class="math-var">k</span> ≈ 1.15 scales the total
+                system energy to include spinning wheels, hubs, and rotors that must also be brought to rest.</p>
+                <div class="formula-details">
+                    <div class="formula-details-inner">
+                        <h4>Variables</h4>
+                        <ul>
+                            <li><span class="math-var">M</span> — total vehicle mass including driver (kg)</li>
+                            <li><span class="math-var">v</span> — initial speed at the start of the stop (m/s)</li>
+                            <li><span class="math-var">k</span> — rotational inertia correction factor (dimensionless, ≈1.15)</li>
+                            <li><span class="math-var">E</span> — total kinetic energy to be dissipated as heat (J)</li>
+                        </ul>
+                        <h4>Why the k factor exists</h4>
+                        <p>½Mv² only captures the vehicle's <em>translational</em> kinetic energy. Wheels, hubs, and rotors
+                        are also spinning, so they carry rotational kinetic energy (½Iω²) that must independently be
+                        brought to zero. Computing the exact moment of inertia for every rotating part is unnecessary
+                        for a first-pass thermal budget — instead, k lumps that rotational energy in as roughly a 15%
+                        surcharge on the translational term, which is a standard approximation for open-wheel/Baja-class
+                        vehicles with relatively light wheel assemblies.</p>
+                        <h4>Practical note</h4>
+                        <p>This E is the energy budget used downstream by the axle/disc split (Formula 2) and the
+                        temperature-rise model (Formula 5). It assumes a single hard stop with negligible aerodynamic
+                        drag or rolling-resistance contribution to deceleration.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="formula-card" tabindex="0" role="button" aria-expanded="false" onclick="toggleFormula(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleFormula(this);}">
+                <div class="formula-card-head">
+                    <h3>2. Energy Split per Axle and per Disc</h3>
+                    <svg class="formula-chevron" viewBox="0 0 20 20" fill="none"><path d="M5 7.5 L10 12.5 L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span class="eq">E_front = E × bias        (typically 0.75 front / 0.25 rear)
 E_disc  = E_axle ÷ 2</span>
-            <p>Weight transfer under braking loads the front axle harder, so the hydraulic system is
-            biased approximately 75 % front; each axle's share divides between its two discs.</p>
-        </div>
+                <p class="summary">Weight transfer under braking loads the front axle harder, so the hydraulic system is
+                biased approximately 75% front; each axle's share divides between its two discs.</p>
+                <div class="formula-details">
+                    <div class="formula-details-inner">
+                        <h4>Variables</h4>
+                        <ul>
+                            <li><span class="math-var">bias</span> — fraction of total braking energy carried by the front axle (dimensionless, 0–1)</li>
+                            <li><span class="math-var">E_front / E_rear</span> — energy absorbed by each axle (J)</li>
+                            <li><span class="math-var">E_disc</span> — energy absorbed by a single rotor, assuming a symmetric left/right split (J)</li>
+                        </ul>
+                        <h4>Why bias exists</h4>
+                        <p>Under hard braking, inertia transfers normal load from the rear axle to the front axle. More
+                        normal load means more available tire grip, so the front tires can generate (and therefore need
+                        to absorb) a larger share of the total braking force before locking. A fixed 75/25 split is a
+                        practical approximation of that dynamic transfer for a low, light Baja chassis; real cars often
+                        use a proportioning valve or brake-by-wire to vary this with deceleration in real time.</p>
+                        <h4>Practical note</h4>
+                        <p>Getting the bias wrong in either direction causes premature lockup at one end: too much front
+                        bias locks the fronts first (loss of steering), too little locks the rears first (loss of
+                        stability/spin). Each disc's E_disc feeds directly into the heat-flux (Formula 4) and
+                        temperature-rise (Formula 5) calculations for that individual rotor.</p>
+                    </div>
+                </div>
+            </div>
 
-        <div class="formula-card">
-            <h3>3. Deceleration and Stopping Time (Traction Limit)</h3>
-            <span class="eq">a = μ × g        t_stop = v ÷ a        (g = 9.80665 m/s²)</span>
-            <p>Maximum deceleration is capped by the tire–road friction coefficient
-            <span class="math-var">μ</span> — brakes stronger than the tires simply lock the wheels.</p>
-        </div>
+            <div class="formula-card" tabindex="0" role="button" aria-expanded="false" onclick="toggleFormula(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleFormula(this);}">
+                <div class="formula-card-head">
+                    <h3>3. Deceleration and Stopping Time (Traction Limit)</h3>
+                    <svg class="formula-chevron" viewBox="0 0 20 20" fill="none"><path d="M5 7.5 L10 12.5 L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span class="eq">a = μ × g        t_stop = v ÷ a        (g = 9.80665 m/s²)</span>
+                <p class="summary">Maximum deceleration is capped by the tire–road friction coefficient
+                <span class="math-var">μ</span> — brakes stronger than the tires simply lock the wheels.</p>
+                <div class="formula-details">
+                    <div class="formula-details-inner">
+                        <h4>Variables</h4>
+                        <ul>
+                            <li><span class="math-var">μ</span> — tire–road friction coefficient (dimensionless, ≈0.9 dry)</li>
+                            <li><span class="math-var">g</span> — gravitational acceleration, 9.80665 m/s²</li>
+                            <li><span class="math-var">a</span> — maximum achievable deceleration (m/s²)</li>
+                            <li><span class="math-var">t_stop</span> — time to bring the vehicle to rest (s)</li>
+                        </ul>
+                        <h4>Why traction is the limit</h4>
+                        <p>A caliper can clamp a rotor hard enough to lock a wheel almost instantly — the actual limit on
+                        how fast the car can slow down is how much force the tire contact patch can transmit to the
+                        road before it slides. That ceiling is μ × (normal force), which per unit mass reduces to a = μg.
+                        Braking harder than this doesn't reduce t_stop; it just locks the wheel, converts rolling
+                        friction to (lower) sliding friction, and can lengthen the stop while losing steering control.</p>
+                        <h4>Practical note</h4>
+                        <p>t_stop sets the time window over which the total energy E (Formula 1) is dissipated, which is
+                        exactly the denominator used in the power calculation, P = E ÷ t (Formula 4). A shorter t_stop
+                        (higher μ, more aggressive driving) concentrates the same energy into a shorter interval —
+                        higher instantaneous power and heat flux even though total energy is unchanged.</p>
+                    </div>
+                </div>
+            </div>
 
-        <div class="formula-card">
-            <h3>4. Braking Power and Heat Flux</h3>
-            <span class="eq">P = E ÷ t        q = P ÷ A_rubbing</span>
-            <p>The rate at which each disc absorbs energy, and its concentration over the pad-swept
-            area — the quantity that drives surface hot-spots and pad fade.</p>
-        </div>
+            <div class="formula-card" tabindex="0" role="button" aria-expanded="false" onclick="toggleFormula(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleFormula(this);}">
+                <div class="formula-card-head">
+                    <h3>4. Braking Power and Heat Flux</h3>
+                    <svg class="formula-chevron" viewBox="0 0 20 20" fill="none"><path d="M5 7.5 L10 12.5 L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span class="eq">P = E ÷ t        q = P ÷ A_rubbing</span>
+                <p class="summary">The rate at which each disc absorbs energy, and its concentration over the pad-swept
+                area — the quantity that drives surface hot-spots and pad fade.</p>
+                <div class="formula-details">
+                    <div class="formula-details-inner">
+                        <h4>Variables</h4>
+                        <ul>
+                            <li><span class="math-var">P</span> — average braking power absorbed by one disc during the stop (W)</li>
+                            <li><span class="math-var">t</span> — stop duration, t_stop from Formula 3 (s)</li>
+                            <li><span class="math-var">A_rubbing</span> — pad-swept area of the rotor's rubbing ring (m²)</li>
+                            <li><span class="math-var">q</span> — heat flux, power per unit area (W/m²)</li>
+                        </ul>
+                        <h4>Why heat flux matters more than raw power</h4>
+                        <p>Two rotors can absorb identical total power, but if one has a smaller pad-swept area, the
+                        energy is packed into less material and the local surface temperature spikes higher. q is what
+                        actually drives the phenomena that fail brakes in service: pad glazing, resin decomposition
+                        (fade), and micro-cracking of the rubbing surface from repeated thermal cycling.</p>
+                        <h4>Practical note</h4>
+                        <p>P here is an average over the whole stop; the true instantaneous power is highest at the start
+                        of the stop (when v is highest) and tapers to zero. A_rubbing is the same rubbing-ring area
+                        referenced in the vehicle viewer above and in Formula 5's peak-temperature model.</p>
+                    </div>
+                </div>
+            </div>
 
-        <div class="formula-card">
-            <h3>5. Temperature Rise — Soak vs. Peak</h3>
-            <span class="eq">ΔT = E ÷ (m × c_p)
+            <div class="formula-card" tabindex="0" role="button" aria-expanded="false" onclick="toggleFormula(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleFormula(this);}">
+                <div class="formula-card-head">
+                    <h3>5. Temperature Rise — Soak vs. Peak</h3>
+                    <svg class="formula-chevron" viewBox="0 0 20 20" fill="none"><path d="M5 7.5 L10 12.5 L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span class="eq">ΔT = E ÷ (m × c_p)
 ΔT_soak → full rotor mass    ·    ΔT_peak → action-surface mass only</span>
-            <p>Heat does not spread instantly through the rotor: the bulk (soak) model gives the
-            settled temperature, while the action-surface model reveals the instantaneous surface
-            spike that governs fade and thermal fatigue.</p>
+                <p class="summary">Heat does not spread instantly through the rotor: the bulk (soak) model gives the
+                settled temperature, while the action-surface model reveals the instantaneous surface
+                spike that governs fade and thermal fatigue.</p>
+                <div class="formula-details">
+                    <div class="formula-details-inner">
+                        <h4>Variables</h4>
+                        <ul>
+                            <li><span class="math-var">ΔT</span> — temperature rise above ambient (K or °C)</li>
+                            <li><span class="math-var">m</span> — mass used in the calculation: full rotor for soak, rubbing ring only for peak (kg)</li>
+                            <li><span class="math-var">c_p</span> — specific heat capacity of the rotor material, ≈460–500 J/kg·K for steel/cast iron</li>
+                        </ul>
+                        <h4>Soak vs. peak — why both models exist</h4>
+                        <p>Immediately after a hard stop, the heat generated at the pad–rotor interface hasn't had time
+                        to conduct through the entire rotor mass — it is concentrated in the thin rubbing ring the pads
+                        actually contact. Using the <em>full</em> rotor mass here (the soak model) underestimates the
+                        real short-term surface temperature and would miss fade risk; it correctly predicts where the
+                        rotor settles once heat has conducted outward over the following seconds to minutes. Using only
+                        the <em>rubbing-ring</em> mass (the peak/action-surface model) gives the instantaneous
+                        worst-case surface spike immediately after the stop, which is what actually governs pad fade
+                        and thermal-fatigue cracking.</p>
+                        <h4>Practical note</h4>
+                        <p>ΔT_peak is typically the more conservative (higher) figure and the one to check against pad
+                        and rotor material fade thresholds. ΔT_soak is more representative of repeated-stop scenarios
+                        (e.g. an endurance event) where the rotor doesn't fully cool between applications.</p>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <h2>Typical Values (Baja Buggy)</h2>
@@ -371,6 +526,12 @@ function toggleMenu() {
     document.getElementById('menuBtn').classList.toggle('open');
     document.getElementById('drawer').classList.toggle('open');
     document.getElementById('overlay').classList.toggle('show');
+}
+
+/* ---- expandable formula cards ---- */
+function toggleFormula(card) {
+    const expanded = card.classList.toggle('expanded');
+    card.setAttribute('aria-expanded', expanded ? 'true' : 'false');
 }
 
 /* ---- zoom interaction ---- */
