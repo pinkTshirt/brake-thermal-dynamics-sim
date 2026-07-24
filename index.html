@@ -52,7 +52,7 @@ body {
 }
 .overlay.show { opacity:1; pointer-events:auto; }
 /* ============ Page ============ */
-.page { max-width:920px; margin:0 auto; padding:32px 28px 64px 84px; }
+.page { max-width:920px; margin:0; padding:32px 28px 64px 84px; }
 h1 { font-size:1.9em; font-weight:700; margin-bottom:4px; }
 .subtitle { color:var(--muted); font-size:0.95em; margin-bottom:24px; }
 h2 {
@@ -75,20 +75,37 @@ h2 {
 .viewer-btn:hover { background:var(--accent-soft); }
 .viewer-btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
 .stage-clip { overflow:hidden; border-radius:6px; background:#fbfcfd; border:1px solid var(--border); }
-.zoom-stage {
-    transition:transform 0.9s cubic-bezier(0.4, 0.0, 0.2, 1);
-    transform-origin:172px 268px;  /* front wheel centre in SVG units (1px = 1 unit here) */
-    will-change:transform;
+.viewer-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.viewer-btn:disabled { opacity:0.5; cursor:default; }
+#vehicleSvg { display:block; }
+/* ---- wheel rotation: idle roll by default, decelerate to a stop when braking ---- */
+#wheelSpin, #rearWheelSpin {
+    transform-origin:172px 268px; animation:idleSpin 1.1s linear infinite; will-change:transform;
 }
-.zoom-stage.zoomed { transform:scale(3.4); }
-#brakeDetail { opacity:0; transition:opacity 0.5s 0.45s; }
-.zoomed #brakeDetail { opacity:1; }
-#carBody { transition:opacity 0.4s; }
-.zoomed #carBody .fadeOnZoom { opacity:0.15; transition:opacity 0.6s; }
+#rearWheelSpin { transform-origin:690px 268px; }
+@keyframes idleSpin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+#vehicleSvg.braking #wheelSpin,
+#vehicleSvg.braking #rearWheelSpin {
+    animation:brakeToStop 2.2s cubic-bezier(0.12,0.7,0.2,1) forwards;
+}
+@keyframes brakeToStop { from { transform:rotate(0deg); } to { transform:rotate(1080deg); } }
+/* ---- caliper clamping down on the rotor ---- */
+.caliper-group { transform-origin:172px 268px; transition:transform 0.3s ease; }
+#vehicleSvg.braking .caliper-group { transform:scale(0.93); }
+.pad-face { transition:fill 0.3s ease; }
+#vehicleSvg.braking .pad-face { fill:#e0483f; }
+@media (prefers-reduced-motion:reduce) {
+    #wheelSpin, #rearWheelSpin, #vehicleSvg.braking #wheelSpin, #vehicleSvg.braking #rearWheelSpin { animation:none; }
+}
+/* ---- rotor/caliper/label detail: only meaningful once zoomed in ---- */
+.brake-detail { opacity:0; }
+.zoomed .brake-detail { opacity:1; }
+#carBody .fadeOnZoom { transition:opacity 0.15s ease; }
+.zoomed #carBody .fadeOnZoom { opacity:0.12; }
 .wheel-hotspot { cursor:pointer; }
 .wheel-hotspot:hover .hotspot-ring { stroke-opacity:0.9; }
 .hotspot-ring { transition:stroke-opacity 0.2s; }
-.zoomed .hotspot-ring, .zoomed .hotspot-label { opacity:0; transition:opacity 0.3s; }
+.zoomed .hotspot-ring, .zoomed .hotspot-label { opacity:0; transition:opacity 0.15s; }
 .viewer-caption { color:var(--muted); font-size:0.8em; margin-top:10px; }
 /* ============ Formulae grid (expandable cards) ============ */
 .formula-grid {
@@ -139,7 +156,6 @@ th { text-align:left; font-weight:600; background:var(--accent-soft); border-bot
 td { padding:9px 14px; border-bottom:1px solid var(--border); }
 tr:last-child td { border-bottom:none; }
 td:nth-child(2){ font-family:'IBM Plex Mono',monospace; font-size:0.95em; }
-td:last-child { color:var(--muted); }
 @media (max-width:720px){ .page { padding:80px 18px 48px; } }
 </style>
 </head>
@@ -172,11 +188,13 @@ td:last-child { color:var(--muted); }
         <div class="viewer-card">
             <div class="viewer-head">
                 <div class="viewer-title" id="viewerTitle">Vehicle overview — Baja buggy, side elevation</div>
-                <button class="viewer-btn" id="zoomToggle" onclick="toggleZoom()">Zoom to brake system</button>
+                <div class="viewer-actions">
+                    <button class="viewer-btn" id="brakeBtn" onclick="simulateBraking()">Simulate braking</button>
+                    <button class="viewer-btn" id="zoomToggle" onclick="toggleZoom()">Zoom to brake system</button>
+                </div>
             </div>
             <div class="stage-clip">
-                <div class="zoom-stage" id="zoomStage">
-                <svg viewBox="0 0 900 380" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Inter, Arial, sans-serif">
+                <svg id="vehicleSvg" viewBox="0 0 900 380" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Inter, Arial, sans-serif">
                     <defs>
                         <marker id="arr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
                             <path d="M0,0 L7,3.5 L0,7 z" fill="#5b6673"/>
@@ -236,7 +254,7 @@ td:last-child { color:var(--muted); }
                             <circle cx="690" cy="268" r="62" fill="#f0f2f5" stroke="#4d5763" stroke-width="6"/>
                             <circle cx="690" cy="268" r="40" fill="none" stroke="#8a94a1" stroke-width="2"/>
                             <circle cx="690" cy="268" r="8" fill="#8a94a1"/>
-                            <g stroke="#8a94a1" stroke-width="3">
+                            <g id="rearWheelSpin" stroke="#8a94a1" stroke-width="3">
                                 <line x1="690" y1="236" x2="690" y2="300"/>
                                 <line x1="658" y1="268" x2="722" y2="268"/>
                                 <line x1="667" y1="245" x2="713" y2="291"/>
@@ -246,51 +264,58 @@ td:last-child { color:var(--muted); }
 
                         <!-- ============ FRONT wheel (zoom target, centre 172,268) ============ -->
                         <g id="frontWheel" class="wheel-hotspot" onclick="toggleZoom()">
-                            <!-- tire -->
-                            <circle cx="172" cy="268" r="62" fill="#f0f2f5" stroke="#4d5763" stroke-width="6"/>
-                            <!-- rim -->
-                            <circle cx="172" cy="268" r="42" fill="#fbfcfd" stroke="#8a94a1" stroke-width="2.5"/>
+                            <!-- parts that physically spin with the wheel -->
+                            <g id="wheelSpin">
+                                <!-- tire -->
+                                <circle cx="172" cy="268" r="62" fill="#f0f2f5" stroke="#4d5763" stroke-width="6"/>
+                                <!-- rim -->
+                                <circle cx="172" cy="268" r="42" fill="#fbfcfd" stroke="#8a94a1" stroke-width="2.5"/>
 
-                            <!-- ==== Brake assembly detail (revealed on zoom) ==== -->
-                            <g id="brakeDetail">
-                                <!-- brake rotor -->
-                                <circle cx="172" cy="268" r="34" fill="#dfe3e8" stroke="#4d5763" stroke-width="1.6"/>
-                                <!-- rubbing surface ring -->
-                                <circle cx="172" cy="268" r="30" fill="none" stroke="#9aa3ae" stroke-width="0.8"/>
-                                <circle cx="172" cy="268" r="18" fill="none" stroke="#9aa3ae" stroke-width="0.8"/>
-                                <!-- cross-drilled vent holes on the rubbing ring -->
-                                <g fill="#f5f6f8" stroke="#8a94a1" stroke-width="0.5">
-                                    <circle cx="172" cy="244" r="1.7"/><circle cx="184" cy="247.2" r="1.7"/>
-                                    <circle cx="192.8" cy="256" r="1.7"/><circle cx="196" cy="268" r="1.7"/>
-                                    <circle cx="192.8" cy="280" r="1.7"/><circle cx="184" cy="288.8" r="1.7"/>
-                                    <circle cx="172" cy="292" r="1.7"/><circle cx="160" cy="288.8" r="1.7"/>
-                                    <circle cx="151.2" cy="280" r="1.7"/><circle cx="148" cy="268" r="1.7"/>
-                                    <circle cx="151.2" cy="256" r="1.7"/><circle cx="160" cy="247.2" r="1.7"/>
+                                <!-- ==== Rotor / hub detail (revealed on zoom, spins with the wheel) ==== -->
+                                <g class="brake-detail">
+                                    <!-- brake rotor -->
+                                    <circle cx="172" cy="268" r="34" fill="#dfe3e8" stroke="#4d5763" stroke-width="1.6"/>
+                                    <!-- rubbing surface ring -->
+                                    <circle cx="172" cy="268" r="30" fill="none" stroke="#9aa3ae" stroke-width="0.8"/>
+                                    <circle cx="172" cy="268" r="18" fill="none" stroke="#9aa3ae" stroke-width="0.8"/>
+                                    <!-- cross-drilled vent holes on the rubbing ring -->
+                                    <g fill="#f5f6f8" stroke="#8a94a1" stroke-width="0.5">
+                                        <circle cx="172" cy="244" r="1.7"/><circle cx="184" cy="247.2" r="1.7"/>
+                                        <circle cx="192.8" cy="256" r="1.7"/><circle cx="196" cy="268" r="1.7"/>
+                                        <circle cx="192.8" cy="280" r="1.7"/><circle cx="184" cy="288.8" r="1.7"/>
+                                        <circle cx="172" cy="292" r="1.7"/><circle cx="160" cy="288.8" r="1.7"/>
+                                        <circle cx="151.2" cy="280" r="1.7"/><circle cx="148" cy="268" r="1.7"/>
+                                        <circle cx="151.2" cy="256" r="1.7"/><circle cx="160" cy="247.2" r="1.7"/>
+                                    </g>
+                                    <!-- hat / hub -->
+                                    <circle cx="172" cy="268" r="12" fill="#c9ced6" stroke="#4d5763" stroke-width="1.2"/>
+                                    <circle cx="172" cy="268" r="4" fill="#8a94a1" stroke="#4d5763" stroke-width="0.8"/>
+                                    <!-- wheel studs -->
+                                    <g fill="#6b7480">
+                                        <circle cx="172" cy="260.5" r="1.4"/><circle cx="179" cy="264" r="1.4"/>
+                                        <circle cx="177" cy="273.5" r="1.4"/><circle cx="167" cy="273.5" r="1.4"/>
+                                        <circle cx="165" cy="264" r="1.4"/>
+                                    </g>
                                 </g>
-                                <!-- hat / hub -->
-                                <circle cx="172" cy="268" r="12" fill="#c9ced6" stroke="#4d5763" stroke-width="1.2"/>
-                                <circle cx="172" cy="268" r="4" fill="#8a94a1" stroke="#4d5763" stroke-width="0.8"/>
-                                <!-- wheel studs -->
-                                <g fill="#6b7480">
-                                    <circle cx="172" cy="260.5" r="1.4"/><circle cx="179" cy="264" r="1.4"/>
-                                    <circle cx="177" cy="273.5" r="1.4"/><circle cx="167" cy="273.5" r="1.4"/>
-                                    <circle cx="165" cy="264" r="1.4"/>
-                                </g>
+                            </g>
+
+                            <!-- ==== Caliper, pads, line, labels (revealed on zoom; mounted to the suspension, does not spin) ==== -->
+                            <g class="brake-detail">
                                 <!-- caliper straddling the rotor (upper-right) -->
-                                <g>
+                                <g class="caliper-group">
                                     <path d="M191 240 A 36 36 0 0 1 206 262 L 197 265 A 27 27 0 0 0 185.5 248 Z"
                                           fill="#1f4e79" stroke="#173e61" stroke-width="1"/>
                                     <!-- caliper bridge bolts -->
                                     <circle cx="196.5" cy="247" r="1.3" fill="#eef3f8"/>
                                     <circle cx="201.5" cy="257" r="1.3" fill="#eef3f8"/>
                                     <!-- brake pads (inner edge of caliper) -->
-                                    <path d="M186.5 249 A 26 26 0 0 1 196 262.5 L 193 263.6 A 23 23 0 0 0 184.5 251.5 Z"
+                                    <path class="pad-face" d="M186.5 249 A 26 26 0 0 1 196 262.5 L 193 263.6 A 23 23 0 0 0 184.5 251.5 Z"
                                           fill="#b23a3a" stroke="#8f2e2e" stroke-width="0.6"/>
-                                    <!-- banjo fitting + flexible brake line -->
-                                    <circle cx="204" cy="252" r="2" fill="#4d5763"/>
-                                    <path d="M204 252 C 214 240, 220 228, 218 212" fill="none" stroke="#4d5763" stroke-width="1.6"/>
                                 </g>
-                                <!-- component labels (small; readable at 3.4x zoom) -->
+                                <!-- banjo fitting + flexible brake line -->
+                                <circle cx="204" cy="252" r="2" fill="#4d5763"/>
+                                <path d="M204 252 C 214 240, 220 228, 218 212" fill="none" stroke="#4d5763" stroke-width="1.6"/>
+                                <!-- component labels (small; readable when zoomed) -->
                                 <g font-size="4.6" fill="#1f2733">
                                     <line x1="150" y1="243" x2="136" y2="234" stroke="#5b6673" stroke-width="0.5" marker-end="url(#arr)" transform="rotate(180 143 238.5)"/>
                                     <text x="118" y="232">Brake rotor</text>
@@ -330,9 +355,8 @@ td:last-child { color:var(--muted); }
                     </g>
                 </svg>
                 </div>
-            </div>
             <div class="viewer-caption" id="viewerCaption">
-                Click the highlighted front wheel, or use the button above, to zoom into the disc-brake assembly.
+                Click the highlighted front wheel, or use the button above, to zoom into the disc-brake assembly. Use "Simulate braking" to watch the wheels spin down to a stop.
             </div>
         </div>
 
@@ -505,17 +529,17 @@ E_disc  = E_axle ÷ 2</span>
 
         </div>
 
-        <h2>Typical Values (Baja Buggy)</h2>
+        <h2>Preset Values</h2>
         <table>
-            <thead><tr><th>Parameter</th><th>Value</th><th>Notes</th></tr></thead>
+            <thead><tr><th>Parameter</th><th>Value</th></tr></thead>
             <tbody>
-                <tr><td>Vehicle mass</td><td>245 kg</td><td>Lightweight buggy, driver included</td></tr>
-                <tr><td>Initial speed</td><td>40 km/h (≈ 11.11 m/s)</td><td>Typical brake-test entry speed</td></tr>
-                <tr><td>Rotational factor k</td><td>1.15</td><td>Wheels, hubs, rotors overhead</td></tr>
-                <tr><td>Brake bias</td><td>75 % front / 25 % rear</td><td>Weight-transfer realistic split</td></tr>
-                <tr><td>Rotor mass (rubbing surface)</td><td>≈ 0.24 kg each</td><td>Pad-swept ring only</td></tr>
-                <tr><td>Specific heat (steel / cast iron)</td><td>460 – 500 J/kg·K</td><td>Rotor material c_p</td></tr>
-                <tr><td>Tire friction μ</td><td>≈ 0.90</td><td>Dry surface adhesion limit</td></tr>
+                <tr><td>Vehicle mass</td><td>245 kg</td></tr>
+                <tr><td>Initial speed</td><td>40 km/h (≈ 11.11 m/s)</td></tr>
+                <tr><td>Rotational factor k</td><td>1.15</td></tr>
+                <tr><td>Brake bias</td><td>75 % front / 25 % rear</td></tr>
+                <tr><td>Rotor mass (rubbing surface)</td><td>≈ 0.24 kg each</td></tr>
+                <tr><td>Specific heat (steel / cast iron)</td><td>460 – 500 J/kg·K</td></tr>
+                <tr><td>Tire friction μ</td><td>≈ 0.90</td></tr>
             </tbody>
         </table>
     </main>
@@ -536,9 +560,13 @@ function toggleFormula(card) {
 
 /* ---- zoom interaction ---- */
 let zoomed = false;
+const OVERVIEW_VIEWBOX = '0 0 900 380';
+const CLOSEUP_VIEWBOX = '98 193 148 148';
 function toggleZoom() {
     zoomed = !zoomed;
-    document.getElementById('zoomStage').classList.toggle('zoomed', zoomed);
+    const svg = document.getElementById('vehicleSvg');
+    svg.classList.toggle('zoomed', zoomed);
+    svg.setAttribute('viewBox', zoomed ? CLOSEUP_VIEWBOX : OVERVIEW_VIEWBOX);
     const btn = document.getElementById('zoomToggle');
     const title = document.getElementById('viewerTitle');
     const cap = document.getElementById('viewerCaption');
@@ -546,13 +574,37 @@ function toggleZoom() {
         btn.textContent = 'Back to vehicle';
         btn.classList.add('primary');
         title.textContent = 'Front brake assembly — rotor, caliper, pads, hub';
-        cap.textContent = 'Cross-drilled rotor with the pad-swept rubbing surface, a floating single-piston caliper, and the flexible line running to the master cylinder. The rubbing-ring mass is the "action surface mass" used in the peak-temperature model.';
+        cap.textContent = 'Cross-drilled rotor with the pad-swept rubbing surface, a floating single-piston caliper, and the flexible line running to the master cylinder. Use "Simulate braking" to watch the caliper clamp down and the wheel come to a stop.';
     } else {
         btn.textContent = 'Zoom to brake system';
         btn.classList.remove('primary');
         title.textContent = 'Vehicle overview — Baja buggy, side elevation';
-        cap.textContent = 'Click the highlighted front wheel, or use the button above, to zoom into the disc-brake assembly.';
+        cap.textContent = 'Click the highlighted front wheel, or use the button above, to zoom into the disc-brake assembly. Use "Simulate braking" to watch the wheels spin down to a stop.';
     }
+}
+
+/* ---- brake animation: caliper clamps down, wheels decelerate to a stop ---- */
+let brakeAnimTimer = null;
+function simulateBraking() {
+    const svg = document.getElementById('vehicleSvg');
+    const btn = document.getElementById('brakeBtn');
+    clearTimeout(brakeAnimTimer);
+    svg.classList.remove('braking');
+    void svg.offsetWidth; /* force reflow so the animation restarts from the top on replay */
+    svg.classList.add('braking');
+    btn.disabled = true;
+    btn.textContent = 'Braking…';
+    brakeAnimTimer = setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = 'Resume driving';
+        btn.onclick = resumeDriving;
+    }, 2300);
+}
+function resumeDriving() {
+    document.getElementById('vehicleSvg').classList.remove('braking');
+    const btn = document.getElementById('brakeBtn');
+    btn.textContent = 'Simulate braking';
+    btn.onclick = simulateBraking;
 }
 </script>
 </body>
