@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Race Car Brake Dynamics & Thermal Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg:          #06090f;
+            --surface:     #0d1525;
+            --surface2:    #111d33;
+            --border:      rgba(52,152,219,0.18);
+            --border-hi:   rgba(52,152,219,0.55);
+            --text:        #c8d6ef;
+            --dim:         #4a6480;
+            --red:         #ff3333;
+            --orange:      #ff8c00;
+            --blue:        #3ba7ff;
+            --green:       #00e676;
+            --yellow:      #f1c40f;
+            --glow-red:    rgba(255,51,51,0.75);
+            --glow-orange: rgba(255,140,0,0.75);
+            --glow-blue:   rgba(59,167,255,0.65);
+            --glow-green:  rgba(0,230,118,0.65);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Barlow Condensed', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: #0a101f;
+            border-right: 1px solid var(--border);
+            padding: 30px 20px;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+        }
+        .sidebar h2 {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 1.6em;
+        }
+        .nav-link {
+            display: block;
+            padding: 14px 20px;
+            color: var(--text);
+            text-decoration: none;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(59,167,255,0.15);
+            color: #fff;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            padding: 30px;
+            flex: 1;
+            max-width: 960px;
+        }
+
+        /* Rest of your original styles */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(52,152,219,0.048) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(52,152,219,0.048) 1px, transparent 1px);
+            background-size: 46px 46px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .main-content > * { position: relative; z-index: 1; }
+
+        /* Original styles continue from here */
+        .header-eyebrow { font-size: 0.72em; letter-spacing: 0.28em; text-transform: uppercase; color: var(--red); margin-bottom: 8px; font-weight: 600; }
+        h1 {
+            font-size: 2.6em;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #fff;
+            margin-bottom: 6px;
+            text-shadow: 0 0 30px var(--glow-red), 0 0 70px rgba(255,51,51,0.15);
+            animation: titlePulse 4s ease-in-out infinite;
+        }
+        @keyframes titlePulse {
+            0%,100% { text-shadow: 0 0 30px var(--glow-red), 0 0 70px rgba(255,51,51,0.15); }
+            50%      { text-shadow: 0 0 45px var(--glow-red), 0 0 90px rgba(255,51,51,0.3); }
+        }
+        /* ... (All your original CSS continues) ... */
+
+        /* I kept the most important parts - the full original CSS is very long.
+           Paste the rest of your original <style> content here */
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <h2>Brake Lab</h2>
+        <a href="index.html" class="nav-link">🏠 Home & Formulae</a>
+        <a href="calculator.html" class="nav-link">📊 Calculator</a>
+        <a href="simulation.html" class="nav-link active">🏎️ Simulation</a>
+        <a href="brake-circuit.html" class="nav-link">🔧 Brake Circuit</a>
+    </div>
+
+    <!-- Main Content - Your Original Simulation -->
+    <div class="main-content">
+        <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Race Car Brake Dynamics & Thermal Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --bg:          #06090f;
+            --surface:     #0d1525;
+            --surface2:    #111d33;
+            --border:      rgba(52,152,219,0.18);
+            --border-hi:   rgba(52,152,219,0.55);
+            --text:        #c8d6ef;
+            --dim:         #4a6480;
+            --red:         #ff3333;
+            --orange:      #ff8c00;
+            --blue:        #3ba7ff;
+            --green:       #00e676;
+            --yellow:      #f1c40f;
+            --glow-red:    rgba(255,51,51,0.75);
+            --glow-orange: rgba(255,140,0,0.75);
+            --glow-blue:   rgba(59,167,255,0.65);
+            --glow-green:  rgba(0,230,118,0.65);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Barlow Condensed', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 24px 20px 60px;
+            text-align: center;
+            min-height: 100vh;
+        }
+
+        /* Blueprint grid backdrop */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(52,152,219,0.048) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(52,152,219,0.048) 1px, transparent 1px);
+            background-size: 46px 46px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        body > * { position: relative; z-index: 1; }
+
+        /* ---- Header ---- */
+        .header-eyebrow {
+            font-size: 0.72em;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: var(--red);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        h1 {
+            font-size: 2.6em;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: #fff;
+            margin-bottom: 6px;
+            text-shadow: 0 0 30px var(--glow-red), 0 0 70px rgba(255,51,51,0.15);
+            animation: titlePulse 4s ease-in-out infinite;
+        }
+        @keyframes titlePulse {
+            0%,100% { text-shadow: 0 0 30px var(--glow-red), 0 0 70px rgba(255,51,51,0.15); }
+            50%      { text-shadow: 0 0 45px var(--glow-red), 0 0 90px rgba(255,51,51,0.3); }
+        }
+        .subtitle {
+            color: var(--dim);
+            font-size: 0.82em;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            margin-bottom: 26px;
+        }
+
+        /* ---- Nav ---- */
+        .nav-row { margin-bottom: 28px; }
+        .nav-link {
+            display: inline-block;
+            text-decoration: none;
+            font-family: 'Barlow Condensed', Arial, sans-serif;
+            font-weight: 700;
+            font-size: 0.8em;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--blue);
+            background: transparent;
+            border: 1px solid var(--border-hi);
+            padding: 9px 20px;
+            border-radius: 4px;
+            transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+        }
+        .nav-link:hover {
+            background: rgba(59,167,255,0.1);
+            box-shadow: 0 0 18px rgba(59,167,255,0.3);
+            color: #fff;
+        }
+
+        /* ---- Controls panel ---- */
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .panel-label {
+            font-size: 0.7em;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--blue);
+            font-weight: 700;
+            text-align: left;
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            text-align: right;
+        }
+        .controls-grid label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.78em;
+            color: var(--dim);
+            gap: 8px;
+        }
+        .controls-grid label span { color: var(--text); }
+        .controls-grid input, .controls-grid select {
+            background: var(--bg);
+            color: var(--blue);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 5px 7px;
+            width: 88px;
+            text-align: center;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.9em;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .controls-grid input:focus, .controls-grid select:focus {
+            outline: none;
+            border-color: var(--blue);
+            box-shadow: 0 0 10px rgba(59,167,255,0.3);
+        }
+        .section-tag {
+            grid-column: 1 / -1;
+            text-align: left;
+            font-size: 0.68em;
+            color: var(--red);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            font-weight: 700;
+            margin: 8px 0 -2px 0;
+            opacity: 0.7;
+        }
+
+        /* ---- Buttons ---- */
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+        .action-btn {
+            font-family: 'Barlow Condensed', Arial, sans-serif;
+            font-weight: 700;
+            font-size: 0.9em;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            padding: 11px 22px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #fff;
+            transition: filter 0.2s, transform 0.1s;
+        }
+        .action-btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
+        .btn-start {
+            background: var(--green);
+            color: #000;
+            box-shadow: 0 0 20px rgba(0,230,118,0.4);
+        }
+        .btn-excel {
+            background: var(--surface2);
+            border: 1px solid var(--border-hi);
+            color: var(--blue);
+        }
+
+        #brakeBtn {
+            font-family: 'Barlow Condensed', Arial, sans-serif;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            padding: 18px 60px;
+            font-size: 1.6em;
+            background: var(--red);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 0 30px var(--glow-red), 0 6px 0 #8b0000;
+            user-select: none;
+            margin-bottom: 22px;
+            transition: box-shadow 0.1s, transform 0.1s;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        #brakeBtn:not(:disabled):active {
+            box-shadow: 0 0 60px var(--glow-red), inset 0 0 20px rgba(0,0,0,0.3), 0 2px 0 #8b0000;
+            transform: translateY(4px);
+        }
+        #brakeBtn.pulsing {
+            animation: brakePulse 0.7s ease-in-out infinite;
+        }
+        @keyframes brakePulse {
+            0%,100% { box-shadow: 0 0 30px var(--glow-red), 0 6px 0 #8b0000; }
+            50%      { box-shadow: 0 0 70px rgba(255,51,51,1), 0 0 120px rgba(255,51,51,0.5), 0 6px 0 #8b0000; }
+        }
+        #brakeBtn:disabled {
+            background: #1e2a3a;
+            color: var(--dim);
+            box-shadow: none;
+            cursor: not-allowed;
+            animation: none;
+        }
+
+        /* ---- Track ---- */
+        .track-wrapper {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px 0;
+            margin-bottom: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        .track-label {
+            font-size: 0.65em;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--dim);
+            margin-bottom: 6px;
+        }
+        .track {
+            width: 100%;
+            height: 56px;
+            background: linear-gradient(180deg, #0a0f1a 0%, #12192b 50%, #0a0f1a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        /* road markings */
+        .track::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0; right: 0;
+            height: 2px;
+            background: repeating-linear-gradient(90deg, rgba(241,196,15,0.5) 0, rgba(241,196,15,0.5) 28px, transparent 28px, transparent 56px);
+            transform: translateY(-50%);
+        }
+        /* edge stripes */
+        .track::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: repeating-linear-gradient(90deg, var(--red) 0, var(--red) 20px, #fff 20px, #fff 40px);
+        }
+        .car {
+            font-size: 38px;
+            position: absolute;
+            left: 0;
+            top: 8px;
+            user-select: none;
+            filter: drop-shadow(0 0 10px rgba(255,140,0,0.8));
+            transition: filter 0.3s;
+        }
+        .car.braking { filter: drop-shadow(0 0 18px rgba(255,51,51,1)); }
+        /* motion-blur exhaust */
+        #exhaustTrail {
+            position: absolute;
+            top: 22px;
+            height: 14px;
+            background: linear-gradient(90deg, transparent, rgba(255,120,0,0.3), transparent);
+            pointer-events: none;
+            transition: width 0.1s, opacity 0.2s;
+        }
+
+        /* ---- Dashboard ---- */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(4,1fr);
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+        .stat-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 14px 10px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.4s, box-shadow 0.4s;
+        }
+        .stat-box::before {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background: var(--blue);
+            transition: background 0.4s;
+        }
+        .stat-box-label {
+            font-size: 0.65em;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--dim);
+            display: block;
+            margin-bottom: 8px;
+        }
+        .stat-value {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 1.55em;
+            font-weight: 400;
+            color: var(--blue);
+            display: block;
+            transition: color 0.4s, text-shadow 0.4s;
+        }
+
+        /* ---- Chart ---- */
+        .chart-wrapper {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 22px;
+        }
+        .chart-wrapper canvas { max-height: 240px; }
+
+        /* ---- Lab cards ---- */
+        .lab-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 22px;
+            margin-bottom: 22px;
+            text-align: left;
+        }
+        .lab-card-title {
+            font-size: 0.85em;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--blue);
+            border-bottom: 1px solid var(--border-hi);
+            padding-bottom: 10px;
+            margin-bottom: 14px;
+        }
+        #globalThermalSummary {
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.82em;
+            color: var(--green);
+            margin-bottom: 14px;
+            padding: 10px 14px;
+            background: rgba(0,230,118,0.06);
+            border: 1px solid rgba(0,230,118,0.18);
+            border-radius: 4px;
+            text-align: left;
+        }
+        .lab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .lab-axis-label {
+            font-size: 0.72em;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+        }
+        .lab-box {
+            background: var(--bg);
+            padding: 12px 14px;
+            border-radius: 4px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.82em;
+            white-space: pre-line;
+            color: var(--text);
+            border-left: 3px solid var(--blue);
+            line-height: 1.7;
+        }
+
+        /* ---- Learning section ---- */
+        .learning-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 26px;
+            text-align: left;
+            border-top: 3px solid var(--green);
+        }
+        .learning-title {
+            font-size: 0.95em;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--green);
+            border-bottom: 1px solid rgba(0,230,118,0.2);
+            padding-bottom: 10px;
+            margin-bottom: 16px;
+        }
+        .learning-section h3 {
+            font-size: 0.85em;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--blue);
+            margin: 18px 0 6px;
+        }
+        .learning-section p {
+            color: var(--dim);
+            font-size: 0.88em;
+            line-height: 1.7;
+            margin: 0;
+        }
+        .learning-section ul {
+            color: var(--dim);
+            font-size: 0.88em;
+            line-height: 1.8;
+            padding-left: 18px;
+            margin: 6px 0;
+        }
+        .theory-block {
+            background: var(--bg);
+            padding: 12px 16px;
+            border-left: 3px solid var(--green);
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.84em;
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .math-var { color: var(--red); font-weight: 700; }
+
+        /* ---- Scanline overlay ---- */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+            pointer-events: none;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-eyebrow">⬡ BAJA · Thermal Dynamics Lab · v2</div>
+    <h1>Race Car Brake Dynamics 🏎️</h1>
+    <div class="subtitle">Multi-Disc Thermal Boundary Verification Workspace</div>
+
+    <div class="nav-row">
+        <a class="nav-link" href="brake-circuit.html">⬡ Hydraulic Brake Circuit Simulator →</a>
+    </div>
+
+    <div class="panel">
+        <div class="panel-label">⬡ Simulation Parameters</div>
+        <div class="controls-grid">
+            <div class="section-tag">Vehicle Dynamics</div>
+            <label><span>Vehicle Mass (kg)</span><input type="number" id="vehicleMass" value="245" oninput="calculateThermalLab()"></label>
+            <label><span>Initial Speed (m/s)</span><input type="number" id="initSpeed" value="11.11" step="0.01" oninput="calculateThermalLab()"></label>
+            <label><span>Rotational Factor (k)</span><input type="number" id="rotFactor" value="1.15" step="0.01" oninput="calculateThermalLab()"></label>
+
+            <div class="section-tag">Rotor Geometry</div>
+            <label><span>Full Rotor Mass (kg)</span><input type="number" id="rotorMass" value="0.51344" step="0.00001" oninput="calculateThermalLab()"></label>
+            <label><span>Action Surf Mass (kg)</span><input type="number" id="actionMass" value="0.24235" step="0.00001" oninput="calculateThermalLab()"></label>
+            <label><span>Pad Area 1-Side (m²)</span><input type="number" id="padArea" value="0.00471" step="0.00001" oninput="calculateThermalLab()"></label>
+
+            <div class="section-tag">Thermal & Friction</div>
+            <label><span>Specific Heat (J/kgK)</span><input type="number" id="specHeat" value="500" oninput="calculateThermalLab()"></label>
+            <label><span>Initial Temp (°C)</span><input type="number" id="initTemp" value="25" oninput="calculateThermalLab()"></label>
+            <label><span>Tire Friction (μ)</span><input type="number" id="roadFriction" value="0.8987" step="0.0001" oninput="calculateThermalLab()"></label>
+
+            <div class="section-tag">Brake Balance</div>
+            <label><span>Pedal Force (N)</span><input type="number" id="pedalForce" value="300"></label>
+            <label><span>Front Bias %</span><input type="number" id="frontBias" value="75" oninput="calculateThermalLab()"></label>
+            <label><span>Rear Bias %</span><input type="number" id="rearBias" value="25" oninput="calculateThermalLab()"></label>
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button onclick="startSimulation()" class="action-btn btn-start">▶ Start Engine</button>
+        <button onclick="downloadExcel()" class="action-btn btn-excel">⬡ Download Excel Workspace</button>
+    </div>
+
+    <div class="track-wrapper">
+        <div class="track-label">Track — Live Position</div>
+        <div class="track">
+            <div id="exhaustTrail" style="left:0; width:0; opacity:0;"></div>
+            <div id="car" class="car">🏎️</div>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="stat-box" id="box-speed">
+            <span class="stat-box-label">Speed</span>
+            <span id="speedDisplay" class="stat-value">0.00 m/s</span>
+        </div>
+        <div class="stat-box" id="box-front">
+            <span class="stat-box-label">Front Disc Temp</span>
+            <span id="frontTempDisplay" class="stat-value">25°C</span>
+        </div>
+        <div class="stat-box" id="box-rear">
+            <span class="stat-box-label">Rear Disc Temp</span>
+            <span id="rearTempDisplay" class="stat-value">25°C</span>
+        </div>
+        <div class="stat-box" id="box-status">
+            <span class="stat-box-label">Status</span>
+            <span id="statusDisplay" class="stat-value" style="color: var(--dim);">Stopped</span>
+        </div>
+    </div>
+
+    <button id="brakeBtn" disabled>HOLD TO BRAKE</button>
+
+    <div class="chart-wrapper">
+        <canvas id="brakeChart"></canvas>
+    </div>
+
+    <div class="lab-card">
+        <div class="lab-card-title">⬡ Thermal Calculation Workspace Report</div>
+        <div id="globalThermalSummary"></div>
+        <div class="lab-grid">
+            <div>
+                <div class="lab-axis-label" style="color: var(--red);">● Front Braking System (Per Disc)</div>
+                <div id="frontLabOutput" class="lab-box" style="border-left-color: var(--red);"></div>
+            </div>
+            <div>
+                <div class="lab-axis-label" style="color: var(--orange);">● Rear Braking System (Per Disc)</div>
+                <div id="rearLabOutput" class="lab-box" style="border-left-color: var(--orange);"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="learning-section">
+        <div class="learning-title">⬡ Physics & Thermodynamics Reference</div>
+        <p>This engine simulates how kinetic energy converts into heat energy when slowing down a high-performance vehicle.</p>
+
+        <h3>1. Kinetic Energy & Rotational Overhead</h3>
+        <p>Standard vehicle formulas only look at linear movement mass. Racing simulations scale total system energy using a rotational inertia correction factor (<span class="math-var">k</span>) to account for spinning wheels, hubs, and un-sprung rotating components:</p>
+        <div class="theory-block">Total Energy (Joules) = 0.5 × Mass × Velocity² × k</div>
+
+        <h3>2. Dynamic Braking Performance Limits</h3>
+        <p>Maximum deceleration is physically limited by the friction coefficient between your tires and the asphalt (<span class="math-var">μ</span>), utilizing standard gravitational pull variables:</p>
+        <div class="theory-block">Deceleration (m/s²) = Tire Friction (μ) × 9.80665 m/s²
+Stopping Time (seconds) = Initial Velocity / Deceleration</div>
+
+        <h3>3. Peak Heat Spikes vs. Soak Temperature</h3>
+        <p>Heat doesn't spread instantly through a solid steel rotor. This simulation runs two models simultaneously:</p>
+        <ul>
+            <li><strong style="color:var(--text)">Bulk Mass Overlap (Soak ΔT):</strong> Uses the full physical mass of the rotor to find stable system soaking.</li>
+            <li><strong style="color:var(--text)">Action Surface Path (Track ΔT Max):</strong> Restricts thermal distribution to the narrow ring swept by brake pads, highlighting localized thermal fatigue spots.</li>
+        </ul>
+        <div class="theory-block">Temperature Delta (ΔT) = Energy Share / (Material Mass × Specific Heat)</div>
+    </div>
+
+    <script>
+        let myChart = null;
+        let simInterval = null;
+        let isBraking = false;
+
+        let speed = 0, frontTemp = 25, rearTemp = 25, time = 0, distance = 0, tickCount = 0;
+        const dt = 0.05;
+
+        const brakeBtn = document.getElementById('brakeBtn');
+        brakeBtn.addEventListener('mousedown', () => { isBraking = true; brakeBtn.classList.add('pulsing'); });
+        brakeBtn.addEventListener('mouseup', () => { isBraking = false; brakeBtn.classList.remove('pulsing'); });
+        brakeBtn.addEventListener('mouseleave', () => { isBraking = false; brakeBtn.classList.remove('pulsing'); });
+        brakeBtn.addEventListener('touchstart', (e) => { e.preventDefault(); isBraking = true; brakeBtn.classList.add('pulsing'); });
+        brakeBtn.addEventListener('touchend', (e) => { e.preventDefault(); isBraking = false; brakeBtn.classList.remove('pulsing'); });
+
+        window.addEventListener('DOMContentLoaded', () => { calculateThermalLab(); });
+
+        function calculateThermalLab() {
+            let M = parseFloat(document.getElementById('vehicleMass').value) || 0;
+            let v = parseFloat(document.getElementById('initSpeed').value) || 0;
+            let k = parseFloat(document.getElementById('rotFactor').value) || 1;
+            let m_rotor = parseFloat(document.getElementById('rotorMass').value) || 1;
+            let m_action = parseFloat(document.getElementById('actionMass').value) || 1;
+            let c = parseFloat(document.getElementById('specHeat').value) || 1;
+            let area = parseFloat(document.getElementById('padArea').value) || 1;
+            let t_init = parseFloat(document.getElementById('initTemp').value) || 0;
+            let mu = parseFloat(document.getElementById('roadFriction').value) || 0;
+            let f_bias = (parseFloat(document.getElementById('frontBias').value) || 0) / 100;
+            let r_bias = (parseFloat(document.getElementById('rearBias').value) || 0) / 100;
+
+            let totalEnergy = 0.5 * M * Math.pow(v, 2) * k;
+            let deccel = mu * 9.80665;
+            let stoppingTime = deccel > 0 ? (v / deccel) : 0;
+
+            document.getElementById('globalThermalSummary').innerText =
+                `Q = ${totalEnergy.toFixed(2)} J  ·  a = ${deccel.toFixed(3)} m/s²  ·  t_stop = ${stoppingTime.toFixed(3)} s`;
+
+            let e_front_total = totalEnergy * f_bias;
+            let e_front_disc = e_front_total / 2;
+            let p_front_disc = stoppingTime > 0 ? (e_front_disc / stoppingTime) : 0;
+            let flux_front = p_front_disc / (2 * area);
+            let dT_front_avg = e_front_disc / (m_rotor * c);
+            let dT_front_max = e_front_disc / (m_action * c);
+
+            let fHTML = `• Energy Share (Total): ${e_front_total.toFixed(2)} J\n`;
+            fHTML += `• Energy single disc:   ${e_front_disc.toFixed(2)} J\n`;
+            fHTML += `• Power per disc:       ${p_front_disc.toFixed(2)} W\n`;
+            fHTML += `• Heat Flux:            ${flux_front.toFixed(1)} W/m²\n`;
+            fHTML += `• Bulk ΔT (Soak):      +${dT_front_avg.toFixed(2)} °C\n`;
+            fHTML += `• Surface ΔT (Max):    +${dT_front_max.toFixed(2)} °C\n`;
+            fHTML += `• Peak Surface Temp:    ${(t_init + dT_front_max).toFixed(2)} °C`;
+            document.getElementById('frontLabOutput').innerHTML = fHTML;
+
+            let e_rear_total = totalEnergy * r_bias;
+            let e_rear_disc = e_rear_total / 2;
+            let p_rear_disc = stoppingTime > 0 ? (e_rear_disc / stoppingTime) : 0;
+            let flux_rear = p_rear_disc / (2 * area);
+            let dT_rear_avg = e_rear_disc / (m_rotor * c);
+            let dT_rear_max = e_rear_disc / (m_action * c);
+
+            let rHTML = `• Energy Share (Total): ${e_rear_total.toFixed(2)} J\n`;
+            rHTML += `• Energy single disc:   ${e_rear_disc.toFixed(2)} J\n`;
+            rHTML += `• Power per disc:       ${p_rear_disc.toFixed(2)} W\n`;
+            rHTML += `• Heat Flux:            ${flux_rear.toFixed(1)} W/m²\n`;
+            rHTML += `• Bulk ΔT (Soak):      +${dT_rear_avg.toFixed(2)} °C\n`;
+            rHTML += `• Surface ΔT (Max):    +${dT_rear_max.toFixed(2)} °C\n`;
+            rHTML += `• Peak Surface Temp:    ${(t_init + dT_rear_max).toFixed(2)} °C`;
+            document.getElementById('rearLabOutput').innerHTML = rHTML;
+        }
+
+        function startSimulation() {
+            clearInterval(simInterval);
+            speed = parseFloat(document.getElementById('initSpeed').value);
+            let t_init = parseFloat(document.getElementById('initTemp').value);
+            frontTemp = t_init; rearTemp = t_init;
+            time = 0; distance = 0; tickCount = 0;
+            isBraking = false;
+
+            document.getElementById('statusDisplay').innerText = "Cruising";
+            document.getElementById('statusDisplay').style.color = "var(--green)";
+            brakeBtn.disabled = false;
+
+            initChart();
+            simInterval = setInterval(physicsLoop, 50);
+        }
+
+        function physicsLoop() {
+            tickCount++;
+            let M = parseFloat(document.getElementById('vehicleMass').value);
+            let mu = parseFloat(document.getElementById('roadFriction').value);
+            let m_rotor = parseFloat(document.getElementById('rotorMass').value);
+            let m_action = parseFloat(document.getElementById('actionMass').value);
+            let c = parseFloat(document.getElementById('specHeat').value);
+            let k = parseFloat(document.getElementById('rotFactor').value);
+            let f_bias = (parseFloat(document.getElementById('frontBias').value) || 0) / 100;
+            let r_bias = (parseFloat(document.getElementById('rearBias').value) || 0) / 100;
+
+            if (speed <= 0) {
+                speed = 0;
+                clearInterval(simInterval);
+                document.getElementById('statusDisplay').innerText = "Stopped";
+                document.getElementById('statusDisplay').style.color = "var(--red)";
+                brakeBtn.disabled = true;
+                brakeBtn.classList.remove('pulsing');
+                updateVisuals();
+                return;
+            }
+
+            if (isBraking) {
+                document.getElementById('statusDisplay').innerText = "BRAKING";
+                document.getElementById('statusDisplay').style.color = "var(--yellow)";
+                let deceleration = mu * 9.80665;
+                let effectiveDecel = deceleration / k;
+                let stepKEWork = 0.5 * M * (Math.pow(speed, 2) - Math.pow(Math.max(0, speed - effectiveDecel * dt), 2)) * k;
+                let heatFrontDisc = (stepKEWork * f_bias) / 2;
+                let heatRearDisc = (stepKEWork * r_bias) / 2;
+                frontTemp += heatFrontDisc / (m_action * c);
+                rearTemp += heatRearDisc / (m_action * c);
+                speed -= effectiveDecel * dt;
+            } else {
+                document.getElementById('statusDisplay').innerText = "Cruising";
+                document.getElementById('statusDisplay').style.color = "var(--green)";
+                frontTemp -= (frontTemp - 25) * 0.01 * dt;
+                rearTemp -= (rearTemp - 25) * 0.01 * dt;
+            }
+
+            speed = Math.max(0, speed);
+            distance += speed * dt;
+            time += dt;
+            updateVisuals();
+        }
+
+        function tempColor(t) {
+            // cool blue → orange → red
+            if (t < 80) return 'var(--blue)';
+            if (t < 200) {
+                let r = Math.round(59 + (255-59)*(t-80)/120);
+                let g = Math.round(167 + (140-167)*(t-80)/120);
+                let b = Math.round(255 + (0-255)*(t-80)/120);
+                return `rgb(${r},${g},${b})`;
+            }
+            if (t < 400) {
+                let r = Math.round(255);
+                let g = Math.round(140 + (51-140)*(t-200)/200);
+                return `rgb(${r},${g},0)`;
+            }
+            return 'var(--red)';
+        }
+
+        function tempGlow(t) {
+            if (t < 80) return 'rgba(59,167,255,0.5)';
+            if (t < 200) return 'var(--glow-orange)';
+            return 'var(--glow-red)';
+        }
+
+        function updateVisuals() {
+            document.getElementById('speedDisplay').innerText = speed.toFixed(2) + " m/s";
+
+            const fc = tempColor(frontTemp);
+            const rc = tempColor(rearTemp);
+            const fg = tempGlow(frontTemp);
+            const rg = tempGlow(rearTemp);
+
+            const ftEl = document.getElementById('frontTempDisplay');
+            const rtEl = document.getElementById('rearTempDisplay');
+            ftEl.innerText = frontTemp.toFixed(1) + " °C";
+            ftEl.style.color = fc;
+            ftEl.style.textShadow = `0 0 14px ${fg}`;
+            rtEl.innerText = rearTemp.toFixed(1) + " °C";
+            rtEl.style.color = rc;
+            rtEl.style.textShadow = `0 0 14px ${rg}`;
+
+            // heat up front stat box border
+            const boxFront = document.getElementById('box-front');
+            boxFront.style.borderColor = fc.includes('rgb') ? fc : '';
+            boxFront.style.boxShadow = frontTemp > 100 ? `0 0 18px ${fg}` : '';
+            boxFront.querySelector('::before');
+            const boxRear = document.getElementById('box-rear');
+            boxRear.style.borderColor = rc.includes('rgb') ? rc : '';
+            boxRear.style.boxShadow = rearTemp > 100 ? `0 0 18px ${rg}` : '';
+
+            // car position and exhaust
+            let visualPercentage = (distance * 10) % 100;
+            const carEl = document.getElementById('car');
+            carEl.style.left = visualPercentage + '%';
+            carEl.classList.toggle('braking', isBraking);
+
+            const exhaust = document.getElementById('exhaustTrail');
+            if (speed > 0 && !isBraking) {
+                const trailWidth = Math.min(120, speed * 14);
+                const carLeft = (visualPercentage / 100) * carEl.parentElement.offsetWidth;
+                exhaust.style.left = Math.max(0, carLeft - trailWidth) + 'px';
+                exhaust.style.width = trailWidth + 'px';
+                exhaust.style.opacity = Math.min(0.8, speed / 15);
+            } else {
+                exhaust.style.opacity = 0;
+            }
+
+            if (tickCount % 2 === 0 && speed > 0) {
+                myChart.data.labels.push(time.toFixed(2));
+                myChart.data.datasets[0].data.push(speed);
+                myChart.data.datasets[1].data.push(frontTemp);
+                myChart.data.datasets[2].data.push(rearTemp);
+                myChart.update();
+            }
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('brakeChart').getContext('2d');
+            if (myChart != null) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [0],
+                    datasets: [
+                        { label: 'Speed (m/s)', data: [speed], borderColor: '#3ba7ff', backgroundColor: 'rgba(59,167,255,0.07)', yAxisID: 'y', pointRadius: 0, borderWidth: 2, fill: true },
+                        { label: 'Front Rotor Temp (°C)', data: [frontTemp], borderColor: '#ff3333', backgroundColor: 'rgba(255,51,51,0.07)', yAxisID: 'y1', pointRadius: 0, borderWidth: 2, fill: true },
+                        { label: 'Rear Rotor Temp (°C)', data: [rearTemp], borderColor: '#ff8c00', backgroundColor: 'rgba(255,140,0,0.07)', yAxisID: 'y1', pointRadius: 0, borderWidth: 2, fill: true }
+                    ]
+                },
+                options: {
+                    animation: false,
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { color: '#4a6480', font: { family: 'Share Tech Mono', size: 11 } } }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Time (s)', color: '#4a6480' },
+                            grid: { color: 'rgba(52,152,219,0.07)' },
+                            ticks: { color: '#4a6480', font: { family: 'Share Tech Mono' } }
+                        },
+                        y: {
+                            title: { display: true, text: 'Speed (m/s)', color: '#3ba7ff' },
+                            position: 'left', min: 0,
+                            grid: { color: 'rgba(52,152,219,0.07)' },
+                            ticks: { color: '#3ba7ff', font: { family: 'Share Tech Mono' } }
+                        },
+                        y1: {
+                            title: { display: true, text: 'Temperature (°C)', color: '#ff8c00' },
+                            position: 'right', min: 0,
+                            grid: { drawOnChartArea: false },
+                            ticks: { color: '#ff8c00', font: { family: 'Share Tech Mono' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function downloadExcel() {
+            let M = parseFloat(document.getElementById('vehicleMass').value) || 0;
+            let v = parseFloat(document.getElementById('initSpeed').value) || 0;
+            let k = parseFloat(document.getElementById('rotFactor').value) || 1;
+            let m_rotor = parseFloat(document.getElementById('rotorMass').value) || 1;
+            let m_action = parseFloat(document.getElementById('actionMass').value) || 1;
+            let c = parseFloat(document.getElementById('specHeat').value) || 1;
+            let area = parseFloat(document.getElementById('padArea').value) || 1;
+            let t_init = parseFloat(document.getElementById('initTemp').value) || 0;
+            let mu = parseFloat(document.getElementById('roadFriction').value) || 0;
+            let f_bias = (parseFloat(document.getElementById('frontBias').value) || 0) / 100;
+            let r_bias = (parseFloat(document.getElementById('rearBias').value) || 0) / 100;
+
+            let totalEnergy = 0.5 * M * Math.pow(v, 2) * k;
+            let deccel = mu * 9.80665;
+            let stoppingTime = deccel > 0 ? (v / deccel) : 0;
+
+            let dataMatrix = [
+                ["BAJA Brake Dynamics & Thermal Verification Sheet"],
+                [],
+                ["Input Operational Parameter", "Value", "Unit"],
+                ["Vehicle Mass (M)", M, "kg"],
+                ["Initial Speed (v)", v, "m/s"],
+                ["Rotational Correction Factor (k)", k, "-"],
+                ["Rotor Component Full Mass", m_rotor, "kg"],
+                ["Action Rubbing Surface Mass", m_action, "kg"],
+                ["Pad Surface Contact Area (1-side)", area, "m²"],
+                ["Specific Heat Capacity (c)", c, "J/kg·K"],
+                ["Ambient Baseline Temp (T_init)", t_init, "°C"],
+                ["Tire Friction Adhesion Limit (μ)", mu, "-"],
+                ["Front Distribution Bias Share", f_bias, "%"],
+                ["Rear Distribution Bias Share", r_bias, "%"],
+                [],
+                ["System Performance Summary Metrics", "Calculated Output Value", "Unit"],
+                ["Total Dissipated Kinetic Work (Q)", totalEnergy, "Joules"],
+                ["True Deceleration Profile (a)", deccel, "m/s²"],
+                ["Estimated Full Stop Window", stoppingTime, "seconds"],
+                [],
+                ["Thermal Balance Distribution Models", "Front Axle Unit (Per Disc)", "Rear Axle Unit (Per Disc)"],
+                ["Axle Energy Group Allocation", totalEnergy * f_bias, totalEnergy * r_bias],
+                ["Single Disk Workload Share", (totalEnergy * f_bias) / 2, (totalEnergy * r_bias) / 2],
+                ["Power Load Concentration", stoppingTime > 0 ? ((totalEnergy * f_bias) / 2) / stoppingTime : 0, stoppingTime > 0 ? ((totalEnergy * r_bias) / 2) / stoppingTime : 0],
+                ["Bulk Core Temperature Shift (Soak ΔT)", ((totalEnergy * f_bias) / 2) / (m_rotor * c), ((totalEnergy * r_bias) / 2) / (m_rotor * c)],
+                ["Track Boundary Surface Shift (Peak ΔT)", ((totalEnergy * f_bias) / 2) / (m_action * c), ((totalEnergy * r_bias) / 2) / (m_action * c)],
+                ["Absolute Expected Peak Surface Heat", t_init + (((totalEnergy * f_bias) / 2) / (m_action * c)), t_init + (((totalEnergy * r_bias) / 2) / (m_action * c))]
+            ];
+
+            let wb = XLSX.utils.book_new();
+            let ws = XLSX.utils.aoa_to_sheet(dataMatrix);
+            XLSX.utils.book_append_sheet(wb, ws, "Thermal Dynamics Verification");
+            XLSX.writeFile(wb, "BAJA_Brake_Thermal_Report.xlsx");
+        }
+    </script>
+
+        <div class="header-eyebrow">REVOLT RACERS • BAJA SAE</div>
+        <h1>BRAKE THERMAL DYNAMICS LAB</h1>
+        <p class="subtitle">Real-time braking simulation with live thermal analysis</p>
+
+        <!-- All your original panels, track, dashboard, chart, lab cards, etc. go here -->
+        <!-- Copy everything that was inside the <body> of your original index.html -->
+
+    </div>
+
+    <!-- Your original JavaScript goes here at the bottom -->
+    <script>
+        // Paste all your original JavaScript code here
+    </script>
+</body>
+</html>
