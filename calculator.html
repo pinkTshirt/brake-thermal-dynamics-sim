@@ -9,10 +9,9 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root {
-    --bg: #f5f6f8; --surface: #ffffff; --border: #d9dee5;
-    --text: #1f2733; --muted: #5b6673;
-    --accent: #1f4e79; --accent-soft: #eef3f8;
-    --front: #b23a3a; --rear: #b0702a; --ok: #1e6b45;
+    --bg: #0a0e17; --surface: #141829; --border: #2a3142;
+    --text: #e8ecf1; --muted: #8a93a2;
+    --accent: #00d9ff; --accent-warm: #ff6b35; --accent-cold: #0099ff;
 }
 *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 body {
@@ -22,131 +21,131 @@ body {
 }
 /* ---- hamburger + drawer ---- */
 .menu-btn {
-    position:fixed; top:18px; left:18px; z-index:1001;
-    width:44px; height:44px; border-radius:8px;
+    position:fixed; top:20px; left:20px; z-index:1001;
+    width:48px; height:48px; border-radius:8px;
     background:var(--surface); border:1px solid var(--border);
     cursor:pointer; display:flex; flex-direction:column;
-    justify-content:center; align-items:center; gap:5px;
+    justify-content:center; align-items:center; gap:6px;
+    transition:all 0.3s;
 }
-.menu-btn span { display:block; width:20px; height:2px; background:var(--text); border-radius:1px; transition:transform 0.25s, opacity 0.25s; }
-.menu-btn.open span:nth-child(1){ transform:translateY(7px) rotate(45deg); }
+.menu-btn:hover { border-color:var(--accent); }
+.menu-btn span { display:block; width:22px; height:2.5px; background:var(--accent); border-radius:2px; transition:transform 0.3s, opacity 0.3s; }
+.menu-btn.open span:nth-child(1){ transform:translateY(9px) rotate(45deg); }
 .menu-btn.open span:nth-child(2){ opacity:0; }
-.menu-btn.open span:nth-child(3){ transform:translateY(-7px) rotate(-45deg); }
+.menu-btn.open span:nth-child(3){ transform:translateY(-9px) rotate(-45deg); }
 .drawer {
-    position:fixed; top:0; left:0; height:100vh; width:270px; z-index:1000;
-    background:var(--surface); border-right:1px solid var(--border);
-    padding:80px 20px 24px; transform:translateX(-100%); transition:transform 0.28s ease;
+    position:fixed; top:0; left:0; height:100vh; width:280px; z-index:1000;
+    background:var(--surface); border-right:2px solid var(--accent);
+    padding:80px 20px 24px; transform:translateX(-100%); transition:transform 0.3s ease;
 }
-.drawer.open { transform:translateX(0); box-shadow:0 0 30px rgba(0,0,0,0.12); }
-.drawer h2 { font-size:1.02em; font-weight:700; color:var(--accent); margin-bottom:2px; }
-.drawer .tagline { color:var(--muted); font-size:0.75em; margin-bottom:24px; }
+.drawer.open { transform:translateX(0); box-shadow:0 0 40px rgba(0,217,255,0.2); }
+.drawer h2 { font-size:1.1em; font-weight:700; color:var(--accent); margin-bottom:4px; letter-spacing:0.05em; }
+.drawer .tagline { color:var(--muted); font-size:0.8em; margin-bottom:28px; }
 .nav-link {
-    display:block; padding:11px 14px; color:var(--text); text-decoration:none;
-    border-radius:6px; margin-bottom:4px; font-size:0.92em; font-weight:500;
+    display:block; padding:12px 16px; color:var(--text); text-decoration:none;
+    border-radius:6px; margin-bottom:6px; font-size:0.95em; font-weight:500;
+    transition:all 0.2s;
 }
-.nav-link:hover { background:var(--accent-soft); }
-.nav-link.active { background:var(--accent); color:#fff; }
-.overlay { position:fixed; inset:0; background:rgba(20,26,34,0.35); opacity:0; pointer-events:none; transition:opacity 0.25s; z-index:999; }
+.nav-link:hover { background:rgba(0,217,255,0.1); color:var(--accent); }
+.nav-link.active { background:var(--accent); color:var(--bg); }
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); opacity:0; pointer-events:none; transition:opacity 0.3s; z-index:999; }
 .overlay.show { opacity:1; pointer-events:auto; }
 /* ---- page ---- */
-.page { max-width:900px; margin:0 auto; padding:32px 28px 64px 84px; }
-h1 { font-size:1.9em; font-weight:700; margin-bottom:4px; }
-.subtitle { color:var(--muted); font-size:0.95em; margin-bottom:24px; }
-.panel { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:22px; margin-bottom:18px; }
-.panel-label { font-size:0.85em; font-weight:600; color:var(--accent); margin-bottom:14px; border-bottom:1px solid var(--border); padding-bottom:8px; }
-.controls-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px 24px; }
-.controls-grid label { display:flex; flex-direction:column; gap:4px; font-size:0.82em; color:var(--muted); font-weight:500; }
+.page { max-width:1000px; margin:0 auto; padding:40px 32px 80px 120px; }
+h1 { font-size:2.2em; font-weight:800; margin-bottom:8px; color:var(--accent); }
+.subtitle { color:var(--muted); font-size:1em; margin-bottom:28px; }
+/* ---- inputs ---- */
+.panel { background:var(--surface); border:2px solid var(--border); border-radius:10px; padding:24px; margin-bottom:20px; }
+.panel-label { font-size:0.92em; font-weight:700; color:var(--accent); margin-bottom:16px; border-bottom:2px solid var(--accent); padding-bottom:12px; }
+.controls-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px 24px; }
+.controls-grid label { display:flex; flex-direction:column; gap:6px; }
+.controls-grid label > span { font-size:0.85em; color:var(--muted); font-weight:500; }
 .controls-grid input {
-    background:#fff; color:var(--text); border:1px solid var(--border);
-    border-radius:6px; padding:8px 10px; text-align:right;
-    font-family:'IBM Plex Mono',monospace; font-size:1.02em;
+    background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border);
+    border-radius:6px; padding:10px 12px; text-align:right;
+    font-family:'IBM Plex Mono',monospace; font-size:1em;
+    transition:all 0.2s;
 }
-.controls-grid input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft); }
-.constants-note { grid-column:1 / -1; font-size:0.78em; color:var(--muted); border-top:1px dashed var(--border); padding-top:10px; margin-top:2px; }
-.constants-note code { font-family:'IBM Plex Mono',monospace; color:var(--text); }
-.btn-group { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
-.action-btn { font-family:inherit; font-weight:600; font-size:0.9em; padding:10px 22px; border-radius:6px; cursor:pointer; border:1px solid transparent; }
-.btn-calc { background:var(--accent); color:#fff; }
-.btn-calc:hover { background:#173e61; }
-.btn-excel { background:#fff; border-color:var(--border); color:var(--accent); }
-.btn-excel:hover { background:var(--accent-soft); }
-.summary-strip {
-    font-family:'IBM Plex Mono',monospace; font-size:0.85em; color:var(--ok);
-    margin-bottom:16px; padding:10px 14px; background:#eef6f1;
-    border:1px solid #cfe4d8; border-radius:6px;
-}
-.results-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
-.result-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:18px 20px; }
-.result-card.front { border-top:3px solid var(--front); }
-.result-card.rear { border-top:3px solid var(--rear); }
-.result-card h3 { font-size:0.88em; font-weight:600; margin-bottom:10px; }
-.result-card.front h3 { color:var(--front); }
-.result-card.rear h3 { color:var(--rear); }
-.result-card pre { font-family:'IBM Plex Mono',monospace; font-size:0.8em; line-height:1.9; white-space:pre-wrap; }
-.chart-wrapper { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:18px; margin-bottom:10px; }
-.chart-wrapper canvas { max-height:300px; }
-.hint { color:var(--muted); font-size:0.8em; }
-@media (max-width:720px){
-    .page { padding:80px 18px 48px; }
+.controls-grid input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(0,217,255,0.2); background:rgba(0,217,255,0.05); }
+.section-tag { grid-column:1 / -1; font-size:0.78em; color:var(--accent-warm); text-transform:uppercase; letter-spacing:0.08em; font-weight:700; margin:6px 0 -8px; }
+.note { grid-column:1 / -1; font-size:0.82em; color:var(--muted); border-left:3px solid var(--accent-warm); padding-left:12px; }
+/* ---- buttons ---- */
+.btn-group { display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap; }
+.action-btn { font-family:inherit; font-weight:700; font-size:0.95em; padding:12px 28px; border-radius:8px; cursor:pointer; border:none; transition:all 0.2s; }
+.btn-calc { background:var(--accent); color:var(--bg); }
+.btn-calc:hover { background:#00e6ff; box-shadow:0 0 20px rgba(0,217,255,0.3); }
+.btn-excel { background:rgba(0,217,255,0.1); border:2px solid var(--accent); color:var(--accent); }
+.btn-excel:hover { background:rgba(0,217,255,0.2); }
+/* ---- results ---- */
+.summary { font-family:'IBM Plex Mono',monospace; font-size:0.88em; color:var(--accent); margin-bottom:18px; padding:14px 16px;
+    background:rgba(0,217,255,0.08); border:1px solid var(--accent); border-radius:8px; }
+.results-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
+.result-card { background:var(--surface); border:2px solid var(--border); border-radius:10px; padding:20px; transition:all 0.2s; }
+.result-card:hover { border-color:var(--accent); box-shadow:0 0 20px rgba(0,217,255,0.1); }
+.result-card.front { border-top:4px solid var(--accent-warm); }
+.result-card.rear { border-top:4px solid var(--accent-cold); }
+.result-card h3 { font-size:0.95em; font-weight:700; margin-bottom:12px; }
+.result-card.front h3 { color:var(--accent-warm); }
+.result-card.rear h3 { color:var(--accent-cold); }
+.result-card pre { font-family:'IBM Plex Mono',monospace; font-size:0.82em; line-height:2; white-space:pre-wrap; }
+.chart-wrapper { background:var(--surface); border:2px solid var(--border); border-radius:10px; padding:20px; margin-bottom:16px; }
+.chart-wrapper canvas { max-height:320px; }
+.hint { color:var(--muted); font-size:0.85em; }
+@media (max-width:900px){
+    .page { padding:40px 20px 80px 80px; }
     .controls-grid { grid-template-columns:1fr 1fr; }
     .results-grid { grid-template-columns:1fr; }
 }
 </style>
 </head>
 <body>
-    <button class="menu-btn" id="menuBtn" aria-label="Open navigation menu" onclick="toggleMenu()">
+    <button class="menu-btn" id="menuBtn" onclick="toggleMenu()">
         <span></span><span></span><span></span>
     </button>
     <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
     <nav class="drawer" id="drawer">
-        <h2>Brake Thermal Dynamics Lab</h2>
-        <div class="tagline">Revolt Racers — Baja</div>
-        <a href="index.html" class="nav-link">Home &amp; Formulae</a>
+        <h2>BRAKE LAB</h2>
+        <div class="tagline">Revolt Racers · Baja</div>
+        <a href="index.html" class="nav-link">Home</a>
         <a href="calculator.html" class="nav-link active">Calculator</a>
         <a href="simulation.html" class="nav-link">Simulation</a>
     </nav>
 
     <main class="page">
-        <h1>Brake Performance Calculator</h1>
-        <div class="subtitle">Six essential inputs — results, temperature graph, and Excel export</div>
+        <h1>Performance Calculator</h1>
+        <div class="subtitle">Six essential inputs → instant thermal results with graph and Excel export</div>
 
         <div class="panel">
-            <div class="panel-label">Inputs</div>
+            <div class="panel-label">Vehicle and Brake Parameters</div>
             <div class="controls-grid">
-                <label>Vehicle mass (kg)
-                    <input type="number" id="mass" value="245" oninput="calculate()"></label>
-                <label>Initial speed (km/h)
-                    <input type="number" id="speed" value="40" oninput="calculate()"></label>
-                <label>Tire friction μ
-                    <input type="number" id="mu" value="0.90" step="0.01" oninput="calculate()"></label>
-                <label>Front bias (%)
-                    <input type="number" id="bias" value="75" oninput="calculate()"></label>
-                <label>Rotor mass, rubbing surface (kg)
-                    <input type="number" id="rotorMass" value="0.242" step="0.001" oninput="calculate()"></label>
-                <label>Specific heat c<sub>p</sub> (J/kg·K)
-                    <input type="number" id="cp" value="500" oninput="calculate()"></label>
-                <div class="constants-note">
-                    Fixed constants: rotational factor <code>k = 1.15</code>,
-                    gravity <code>g = 9.80665 m/s²</code>,
-                    ambient <code>25 °C</code>, two discs per axle.
+                <div class="section-tag">Core Inputs</div>
+                <label><span>Vehicle mass (kg)</span><input type="number" id="mass" value="245" oninput="calculate()"></label>
+                <label><span>Initial speed (km/h)</span><input type="number" id="speed" value="40" oninput="calculate()"></label>
+                <label><span>Tire friction μ</span><input type="number" id="mu" value="0.90" step="0.01" oninput="calculate()"></label>
+                <label><span>Front brake bias (%)</span><input type="number" id="bias" value="75" oninput="calculate()"></label>
+                <label><span>Rotor mass, rubbing surface (kg)</span><input type="number" id="rotorMass" value="0.242" step="0.001" oninput="calculate()"></label>
+                <label><span>Specific heat c_p (J/kg·K)</span><input type="number" id="cp" value="500" oninput="calculate()"></label>
+                <div class="note">
+                    Constants: <code>k = 1.15</code> (rotational), <code>g = 9.80665</code> m/s², ambient 25°C,
+                    two discs per axle. Heat dissipated during traction-limited stop.
                 </div>
             </div>
         </div>
 
         <div class="btn-group">
             <button class="action-btn btn-calc" onclick="calculate()">Calculate</button>
-            <button class="action-btn btn-excel" onclick="downloadExcel()">Download Excel sheet</button>
+            <button class="action-btn btn-excel" onclick="downloadExcel()">Export to Excel</button>
         </div>
 
-        <div id="summary" class="summary-strip"></div>
+        <div class="summary" id="summary"></div>
 
         <div class="results-grid">
             <div class="result-card front">
-                <h3>Front braking system (per disc)</h3>
+                <h3>Front Axle (per disc)</h3>
                 <pre id="frontResults"></pre>
             </div>
             <div class="result-card rear">
-                <h3>Rear braking system (per disc)</h3>
+                <h3>Rear Axle (per disc)</h3>
                 <pre id="rearResults"></pre>
             </div>
         </div>
@@ -154,21 +153,18 @@ h1 { font-size:1.9em; font-weight:700; margin-bottom:4px; }
         <div class="chart-wrapper">
             <canvas id="tempChart"></canvas>
         </div>
-        <div class="hint">Rotor-surface temperature rise over the traction-limited stop. The Excel export contains the inputs, results, and the plotted time series on a second worksheet.</div>
+        <div class="hint">Temperature rise profile over the stopping window. Surface ΔT uses pad-swept mass only; settled equilibrium uses full rotor mass. Complete inputs and time series export to Excel.</div>
     </main>
 
 <script>
-/* ---- drawer ---- */
 function toggleMenu() {
     document.getElementById('menuBtn').classList.toggle('open');
     document.getElementById('drawer').classList.toggle('open');
     document.getElementById('overlay').classList.toggle('show');
 }
 
-/* ---- calculation ---- */
 const K = 1.15, G = 9.80665, T_AMB = 25;
-let chart = null;
-let R = null;
+let chart = null, R = null;
 
 function calculate() {
     const M      = parseFloat(document.getElementById('mass').value)      || 0;
@@ -195,18 +191,18 @@ function calculate() {
     R = { M, v_kmh, v, mu, biasF, biasR, mRotor, cp, KE, decel, tStop, dStop, F, Rr };
 
     document.getElementById('summary').innerText =
-        `Q = ${(KE/1000).toFixed(2)} kJ · a = ${decel.toFixed(2)} m/s² · t_stop = ${tStop.toFixed(2)} s · d_stop = ${dStop.toFixed(1)} m`;
+        `Q = ${(KE/1000).toFixed(2)} kJ  ·  a = ${decel.toFixed(2)} m/s²  ·  t_stop = ${tStop.toFixed(2)} s  ·  d_stop = ${dStop.toFixed(1)} m`;
 
     const fmt = (a) =>
-`Energy per disc:   ${(a.eDisc/1000).toFixed(2)} kJ
-Power per disc:    ${a.pDisc.toFixed(0)} W
-Temperature rise:  +${a.dT.toFixed(1)} °C
-Peak rotor temp:   ${a.peakTemp.toFixed(1)} °C`;
+`Energy per disc:       ${(a.eDisc/1000).toFixed(2)} kJ
+Power:                 ${a.pDisc.toFixed(0)} W
+Temperature rise:      +${a.dT.toFixed(1)} °C
+Peak surface temp:     ${a.peakTemp.toFixed(1)} °C`;
 
     document.getElementById('frontResults').innerText = fmt(F);
     document.getElementById('rearResults').innerText  = fmt(Rr);
 
-    // ---- chart ----
+    // Chart
     const N = 40, labels = [], fD = [], rD = [], sD = [];
     for (let i = 0; i <= N; i++) {
         const t = tStop * i / N;
@@ -221,20 +217,22 @@ Peak rotor temp:   ${a.peakTemp.toFixed(1)} °C`;
     chart = new Chart(document.getElementById('tempChart'), {
         type: 'line',
         data: { labels, datasets: [
-            { label:'Front rotor (°C)', data:fD, borderColor:'#b23a3a', yAxisID:'y', pointRadius:0, borderWidth:2 },
-            { label:'Rear rotor (°C)',  data:rD, borderColor:'#b0702a', yAxisID:'y', pointRadius:0, borderWidth:2 },
-            { label:'Speed (km/h)',     data:sD, borderColor:'#1f4e79', borderDash:[5,4], yAxisID:'y1', pointRadius:0, borderWidth:2 }
+            { label:'Front rotor (°C)', data:fD, borderColor:'#ff6b35', yAxisID:'y', pointRadius:0, borderWidth:2.5, tension:0.3 },
+            { label:'Rear rotor (°C)',  data:rD, borderColor:'#0099ff', yAxisID:'y', pointRadius:0, borderWidth:2.5, tension:0.3 },
+            { label:'Speed (km/h)',     data:sD, borderColor:'#00d9ff', borderDash:[6,4], yAxisID:'y1', pointRadius:0, borderWidth:2, tension:0.3 }
         ]},
         options: {
             animation:false, responsive:true,
-            plugins:{ legend:{ labels:{ color:'#1f2733', font:{ family:'Inter', size:12 } } } },
+            plugins:{ legend:{ labels:{ color:'#e8ecf1', font:{ family:'Inter', size:12, weight:'600' }, padding:16 } } },
             scales:{
-                x:{ title:{ display:true, text:'Time (s)', color:'#5b6673' }, grid:{ color:'#e6e9ee' },
-                    ticks:{ color:'#5b6673', font:{ family:'IBM Plex Mono', size:11 }, maxTicksLimit:10 } },
-                y:{ title:{ display:true, text:'Temperature (°C)', color:'#5b6673' }, position:'left',
-                    grid:{ color:'#e6e9ee' }, ticks:{ color:'#5b6673', font:{ family:'IBM Plex Mono', size:11 } } },
-                y1:{ title:{ display:true, text:'Speed (km/h)', color:'#5b6673' }, position:'right', min:0,
-                    grid:{ drawOnChartArea:false }, ticks:{ color:'#5b6673', font:{ family:'IBM Plex Mono', size:11 } } }
+                x:{ title:{ display:true, text:'Time (s)', color:'#8a93a2', font:{ size:12, weight:'600' } },
+                    grid:{ color:'rgba(42,49,66,0.5)' }, ticks:{ color:'#8a93a2', font:{ family:'IBM Plex Mono', size:10 }, maxTicksLimit:10 } },
+                y:{ title:{ display:true, text:'Temperature (°C)', color:'#8a93a2', font:{ size:12, weight:'600' } },
+                    position:'left', grid:{ color:'rgba(42,49,66,0.5)' },
+                    ticks:{ color:'#8a93a2', font:{ family:'IBM Plex Mono', size:10 } } },
+                y1:{ title:{ display:true, text:'Speed (km/h)', color:'#8a93a2', font:{ size:12, weight:'600' } },
+                    position:'right', min:0, grid:{ drawOnChartArea:false },
+                    ticks:{ color:'#8a93a2', font:{ family:'IBM Plex Mono', size:10 } } }
             }
         }
     });
@@ -244,7 +242,7 @@ function downloadExcel() {
     if (!R) calculate();
     const r = R;
     const rows = [
-        ["BAJA Brake Performance — Verification Sheet"],
+        ["BAJA Brake Performance Calculator — Verification Sheet"],
         [],
         ["Input Parameter", "Value", "Unit"],
         ["Vehicle Mass (M)", r.M, "kg"],
@@ -253,15 +251,15 @@ function downloadExcel() {
         ["Front Bias", r.biasF * 100, "%"],
         ["Rotor Mass (rubbing surface)", r.mRotor, "kg"],
         ["Specific Heat (c_p)", r.cp, "J/kg·K"],
-        ["Rotational Factor (k, fixed)", 1.15, "-"],
+        ["Rotational Factor (k)", K, "-"],
         [],
         ["Result", "Value", "Unit"],
-        ["Total Kinetic Energy (Q)", r.KE, "J"],
-        ["Deceleration (a = μg)", r.decel, "m/s²"],
+        ["Total Kinetic Energy", r.KE, "J"],
+        ["Deceleration", r.decel, "m/s²"],
         ["Stopping Time", r.tStop, "s"],
         ["Stopping Distance", r.dStop, "m"],
         [],
-        ["Per Disc", "Front", "Rear"],
+        ["Per Disc Analysis", "Front", "Rear"],
         ["Energy (J)", r.F.eDisc, r.Rr.eDisc],
         ["Power (W)", r.F.pDisc, r.Rr.pDisc],
         ["Temperature Rise (°C)", r.F.dT, r.Rr.dT],
